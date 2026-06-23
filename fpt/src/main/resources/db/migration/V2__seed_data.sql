@@ -1,6 +1,6 @@
 -- Insert Account for Student (Password is 'password123' hashed with bcrypt)
 INSERT INTO accounts (id, phone, password, role, is_active, created_at)
-VALUES ('11111111-1111-1111-1111-111111111111', '0912345678', '$2a$10$wE/.76kE.452lH/48xH8u.5T46B8P769K80zT.E/U4I.8y37I6xI2', 'STUDENT', true, NOW());
+VALUES ('11111111-1111-1111-1111-111111111111', '0912345678', '$2a$12$ZvfhG/4WM5nIkqgG57GbDeBaZOTSpg5Uc7MybbBoo8GPvIeL1Kdgi', 'STUDENT', true, NOW());
 
 -- Insert Student
 INSERT INTO students (id, student_code, full_name, class_name, academic_year, campus, email, address, date_of_birth, program, status, homeroom_teacher, account_id, created_at)
