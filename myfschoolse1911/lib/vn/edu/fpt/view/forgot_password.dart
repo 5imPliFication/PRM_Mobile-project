@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/common/spacing_styles.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/common/sizes.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/common/colors.dart';
+import 'package:myfschoolse1911/vn/edu/fpt/api_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -13,11 +14,29 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _isSubmitted = false;
+  bool _loading = false;
+  final TextEditingController _phoneController = TextEditingController();
 
-  void _handleSubmit() {
-    setState(() {
-      _isSubmitted = true;
-    });
+  Future<void> _handleSubmit() async {
+    if (_phoneController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập số điện thoại')),
+      );
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await apiService.forgotPassword(_phoneController.text);
+      if (mounted) setState(() => _isSubmitted = true);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -156,6 +175,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             ),
             const SizedBox(height: TSizes.sm),
             TextFormField(
+              controller: _phoneController,
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
@@ -186,7 +206,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: _handleSubmit,
+            onPressed: _loading ? null : _handleSubmit,
             style: ElevatedButton.styleFrom(
               backgroundColor: TColors.primary,
               shape: RoundedRectangleBorder(
@@ -194,21 +214,27 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               elevation: 2,
             ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Gửi mã xác nhận',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: TSizes.fontSizeLg,
-                    fontWeight: FontWeight.bold,
+            child: _loading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Gửi mã xác nhận',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: TSizes.fontSizeLg,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.send_rounded, color: Colors.white),
+                    ],
                   ),
-                ),
-                SizedBox(width: 8),
-                Icon(Icons.send_rounded, color: Colors.white),
-              ],
-            ),
           ),
         ),
         const SizedBox(height: TSizes.lg),

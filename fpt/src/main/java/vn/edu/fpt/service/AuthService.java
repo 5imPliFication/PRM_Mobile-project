@@ -8,9 +8,13 @@ import vn.edu.fpt.dto.request.LoginRequest;
 import vn.edu.fpt.dto.response.ApiResponse;
 import vn.edu.fpt.dto.response.LoginResponse;
 import vn.edu.fpt.entity.Account;
+import vn.edu.fpt.entity.Parent;
 import vn.edu.fpt.entity.Student;
+import vn.edu.fpt.entity.Teacher;
 import vn.edu.fpt.repository.AccountRepository;
+import vn.edu.fpt.repository.ParentRepository;
 import vn.edu.fpt.repository.StudentRepository;
+import vn.edu.fpt.repository.TeacherRepository;
 import vn.edu.fpt.security.JwtTokenProvider;
 
 @Service
@@ -19,6 +23,8 @@ public class AuthService {
 
     private final AccountRepository accountRepository;
     private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
+    private final ParentRepository parentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -49,16 +55,21 @@ public class AuthService {
                 .role(account.getRole().name())
                 .phone(account.getPhone());
 
-        // If student role, attach student info
-        if (account.getRole() == Account.Role.STUDENT) {
-            Student student = studentRepository.findByAccountId(account.getId())
-                    .orElse(null);
-            if (student != null) {
-                responseBuilder
-                        .studentId(student.getId())
-                        .fullName(student.getFullName())
-                        .className(student.getClassName());
-            }
+        switch (account.getRole()) {
+            case STUDENT -> studentRepository.findByAccountId(account.getId())
+                    .ifPresent(student -> responseBuilder
+                            .studentId(student.getId())
+                            .fullName(student.getFullName())
+                            .className(student.getClassName()));
+            case TEACHER -> teacherRepository.findByAccountId(account.getId())
+                    .ifPresent(teacher -> responseBuilder
+                            .teacherId(teacher.getId())
+                            .fullName(teacher.getFullName()));
+            case PARENT -> parentRepository.findByAccountId(account.getId())
+                    .ifPresent(parent -> responseBuilder
+                            .parentId(parent.getId())
+                            .fullName(parent.getFullName()));
+            default -> { /* ADMIN: no extra info */ }
         }
 
         return ApiResponse.ok("Đăng nhập thành công", responseBuilder.build());

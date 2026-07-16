@@ -3,6 +3,7 @@ package vn.edu.fpt.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.fpt.dto.request.SubmissionRequest;
@@ -21,6 +22,7 @@ public class AssignmentController {
     private final AssignmentService assignmentService;
 
     @GetMapping
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<AssignmentResponse>>> getAssignments(
             Authentication authentication,
             @RequestParam(required = false) String status) {
@@ -31,6 +33,7 @@ public class AssignmentController {
     }
 
     @PostMapping("/{id}/submit")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<AssignmentResponse>> submitAssignment(
             Authentication authentication,
             @PathVariable UUID id,

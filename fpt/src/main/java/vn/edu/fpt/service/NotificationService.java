@@ -30,9 +30,16 @@ public class NotificationService {
                 .collect(Collectors.toList());
     }
 
-    public NotificationResponse markAsRead(UUID notificationId) {
+    public NotificationResponse markAsRead(UUID accountId, UUID notificationId) {
+        Student student = studentRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin học sinh"));
+
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông báo"));
+
+        if (!notification.getStudent().getId().equals(student.getId())) {
+            throw new RuntimeException("Bạn không có quyền truy cập thông báo này");
+        }
 
         notification.setIsRead(true);
         notificationRepository.save(notification);

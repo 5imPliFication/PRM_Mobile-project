@@ -2,6 +2,7 @@ package vn.edu.fpt.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.fpt.dto.response.ApiResponse;
@@ -19,6 +20,7 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
 
     @GetMapping
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<ScheduleResponse>>> getSchedules(
             Authentication authentication,
             @RequestParam(required = false) Integer dayOfWeek) {

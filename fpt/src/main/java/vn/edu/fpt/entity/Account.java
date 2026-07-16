@@ -43,6 +43,9 @@ public class Account {
     @OneToOne(mappedBy = "account", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Teacher teacher;
 
+    @OneToOne(mappedBy = "account", fetch = FetchType.LAZY)
+    private Parent parent;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -55,6 +58,6 @@ public class Account {
     }
 
     public enum Role {
-        STUDENT, TEACHER, ADMIN
+        STUDENT, TEACHER, PARENT, ADMIN
     }
 }

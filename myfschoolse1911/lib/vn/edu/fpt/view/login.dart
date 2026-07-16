@@ -6,6 +6,8 @@ import 'package:myfschoolse1911/vn/edu/fpt/view/common/sizes.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/common/colors.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/forgot_password.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/home.dart';
+import 'package:myfschoolse1911/vn/edu/fpt/view/teacher/teacher_home.dart';
+import 'package:myfschoolse1911/vn/edu/fpt/view/parent/parent_home.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,6 +27,30 @@ class _LoginScreenState extends State<LoginScreen> {
   // Controller để lấy giá trị số điện thoại
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  void _routeByRole(String? role, String? fullName) {
+    Widget target;
+    switch (role) {
+      case 'STUDENT':
+        target = HomeScreen(fullName: fullName);
+        break;
+      case 'TEACHER':
+        target = TeacherHome(fullName: fullName);
+        break;
+      case 'PARENT':
+        target = ParentHome(fullName: fullName);
+        break;
+      default:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vai trò không được hỗ trợ')),
+        );
+        return;
+    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => target),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -238,18 +264,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                   setState(() => _isLoading = true);
 
-                                  try {
-                                    final data = await apiService.login(_phoneController.text, _passwordController.text);
-                                    
-                                    if (mounted) {
-                                      Navigator.pushReplacement(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => HomeScreen(phone: data['phone']),
-                                        ),
-                                      );
-                                    }
-                                  } catch (e) {
+try {
+                                     final data = await apiService.login(_phoneController.text, _passwordController.text);
+
+                                     if (mounted) {
+                                       final role = data['role'] as String?;
+                                       _routeByRole(role, data['fullName'] as String?);
+                                     }
+                                   } catch (e) {
                                     if (mounted) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),

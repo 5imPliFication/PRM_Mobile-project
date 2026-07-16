@@ -4,7 +4,7 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/fptschool
-    username: postgres
+    username: simpi
     password: 1231
     driver-class-name: org.postgresql.Driver
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myfschoolse1911/vn/edu/fpt/api_service.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/common/colors.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/common/sizes.dart';
 
@@ -11,115 +12,204 @@ class GradesScreen extends StatefulWidget {
 
 class _GradesScreenState extends State<GradesScreen> {
   String _selectedSemester = 'Học kỳ 1';
+  List<String> _semesters = ['Học kỳ 1', 'Học kỳ 2', 'Cả năm'];
+  Map<String, List<Map<String, dynamic>>> _bySemester = {};
+  bool _loading = true;
+  String? _error;
 
-  final List<String> _semesters = ['Học kỳ 1', 'Học kỳ 2', 'Cả năm'];
-
-  final List<_SubjectGrade> _gradesHk1 = [
-    _SubjectGrade('Toán học', 8.5, 9.0, 8.0, 8.5, 8.3, const Color(0xFF5C6BC0)),
-    _SubjectGrade('Vật lý', 8.0, 7.5, 9.0, 8.5, 8.3, const Color(0xFFEF5350)),
-    _SubjectGrade('Hóa học', 9.0, 9.5, 8.5, 9.0, 9.1, const Color(0xFFFF9800)),
-    _SubjectGrade('Sinh học', 7.5, 8.0, 8.0, 8.5, 8.1, const Color(0xFF66BB6A)),
-    _SubjectGrade('Ngữ văn', 8.0, 8.0, 7.5, 8.0, 7.9, const Color(0xFFEC407A)),
-    _SubjectGrade('Tiếng Anh', 9.0, 8.5, 9.0, 9.5, 9.1, const Color(0xFF26A69A)),
-    _SubjectGrade('Tin học', 9.5, 10.0, 9.5, 9.5, 9.6, const Color(0xFF26C6DA)),
-    _SubjectGrade('Lịch sử', 8.0, 7.0, 8.0, 8.5, 7.9, const Color(0xFF8D6E63)),
-  ];
-
-  final List<_SubjectGrade> _gradesHk2 = [
-    _SubjectGrade('Toán học', 9.0, 8.5, 9.0, 9.5, 9.1, const Color(0xFF5C6BC0)),
-    _SubjectGrade('Vật lý', 8.5, 9.0, 8.5, 8.0, 8.4, const Color(0xFFEF5350)),
-    _SubjectGrade('Hóa học', 9.5, 9.0, 9.0, 9.5, 9.4, const Color(0xFFFF9800)),
-    _SubjectGrade('Sinh học', 8.0, 8.5, 8.0, 9.0, 8.5, const Color(0xFF66BB6A)),
-    _SubjectGrade('Ngữ văn', 8.5, 8.0, 8.5, 8.0, 8.2, const Color(0xFFEC407A)),
-    _SubjectGrade('Tiếng Anh', 9.5, 9.0, 9.5, 9.5, 9.4, const Color(0xFF26A69A)),
-    _SubjectGrade('Tin học', 10.0, 9.5, 10.0, 10.0, 9.9, const Color(0xFF26C6DA)),
-    _SubjectGrade('Lịch sử', 8.5, 8.0, 8.5, 9.0, 8.6, const Color(0xFF8D6E63)),
+  static const List<Color> _palette = [
+    Color(0xFF5C6BC0), Color(0xFFEF5350), Color(0xFFFF9800), Color(0xFF66BB6A),
+    Color(0xFFEC407A), Color(0xFF26A69A), Color(0xFF26C6DA), Color(0xFF8D6E63),
   ];
 
   @override
-  Widget build(BuildContext context) {
-    List<_SubjectGrade> activeGrades = _gradesHk1;
-    double gpa = 8.5;
-    String status = 'Học sinh Giỏi';
+  void initState() {
+    super.initState();
+    _load();
+  }
 
-    if (_selectedSemester == 'Học kỳ 2') {
-      activeGrades = _gradesHk2;
-      gpa = 8.9;
-      status = 'Học sinh Giỏi';
-    } else if (_selectedSemester == 'Cả năm') {
-      // average of both
-      activeGrades = List.generate(_gradesHk1.length, (index) {
-        final g1 = _gradesHk1[index];
-        final g2 = _gradesHk2[index];
-        final avg = (g1.average + g2.average) / 2;
-        return _SubjectGrade(g1.name, (g1.m1 + g2.m1) / 2, (g1.m2 + g2.m2) / 2,
-            (g1.m3 + g2.m3) / 2, (g1.m4 + g2.m4) / 2, avg, g1.color);
-      });
-      gpa = 8.7;
-      status = 'Học sinh Giỏi';
+  Future<void> _load() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final data = await apiService.getGrades();
+      final bySem = <String, List<Map<String, dynamic>>>{};
+      for (var i = 0; i < data.length; i++) {
+        final g = data[i] as Map<String, dynamic>;
+        g['_color'] = _palette[i % _palette.length];
+        final sem = (g['semester'] as String?) ?? 'Học kỳ 1';
+        bySem.putIfAbsent(sem, () => []);
+        bySem[sem]!.add(g);
+      }
+      final semKeys = bySem.keys.toList()..sort();
+      final tabs = ['Học kỳ 1', 'Học kỳ 2', 'Cả năm'];
+      final available = semKeys.where((k) => tabs.contains(k)).toList();
+      final items = <String>[];
+      for (final t in tabs) {
+        if (available.contains(t) || !semKeys.any((k) => tabs.contains(k))) {
+          items.add(t);
+        }
+      }
+      if (items.isEmpty) items.addAll(tabs);
+      if (mounted) {
+        setState(() {
+          _bySemester = bySem;
+          _semesters = items;
+          if (!_semesters.contains(_selectedSemester)) {
+            _selectedSemester = _semesters.first;
+          }
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceAll('Exception: ', '');
+          _loading = false;
+        });
+      }
     }
+  }
 
+  List<_SubjectGrade> get _activeGrades {
+    final list = _bySemester[_selectedSemester] ?? [];
+    if (_selectedSemester == 'Cả năm') {
+      final hk1 = _bySemester['Học kỳ 1'] ?? [];
+      final hk2 = _bySemester['Học kỳ 2'] ?? [];
+      final bySubj = <String, List<Map<String, dynamic>>>{};
+      for (final g in [...hk1, ...hk2]) {
+        final s = g['subject'] as String? ?? '';
+        bySubj.putIfAbsent(s, () => []);
+        bySubj[s]!.add(g);
+      }
+      final out = <_SubjectGrade>[];
+      var i = 0;
+      bySubj.forEach((subj, rows) {
+        final color = _palette[i++ % _palette.length];
+        double avg(List<Map<String, dynamic>> rs, String key) {
+          final v = rs.map((r) => r[key]).whereType<num>().toList();
+          return v.isEmpty ? 0 : v.fold<num>(0, (a, b) => a + b) / v.length;
+        }
+
+        out.add(_SubjectGrade(
+          subj,
+          avg(rows, 'oralScore'),
+          avg(rows, 'fifteenMinScore'),
+          avg(rows, 'onePeriodScore'),
+          avg(rows, 'semesterScore'),
+          avg(rows, 'average'),
+          color,
+        ));
+      });
+      return out;
+    }
+    var i = 0;
+    return list.map((g) {
+      final color = _palette[i++ % _palette.length];
+      return _SubjectGrade(
+        g['subject'] as String? ?? '',
+        (g['oralScore'] as num?)?.toDouble() ?? 0,
+        (g['fifteenMinScore'] as num?)?.toDouble() ?? 0,
+        (g['onePeriodScore'] as num?)?.toDouble() ?? 0,
+        (g['semesterScore'] as num?)?.toDouble() ?? 0,
+        (g['average'] as num?)?.toDouble() ?? 0,
+        color,
+      );
+    }).toList();
+  }
+
+  double get _gpa {
+    final grades = _activeGrades;
+    if (grades.isEmpty) return 0;
+    return grades.map((g) => g.average).fold<num>(0, (a, b) => a + b) / grades.length;
+  }
+
+  String get _status {
+    final g = _gpa;
+    if (g >= 8) return 'Học sinh Giỏi';
+    if (g >= 6.5) return 'Học sinh Khá';
+    return 'Học sinh TB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Bảng điểm',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
+        title: const Text('Bảng điểm',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
         centerTitle: true,
         backgroundColor: TColors.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              TColors.bgGradientTop,
-              TColors.bgGradientBottom,
+      body: RefreshIndicator(
+        onRefresh: _load,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [TColors.bgGradientTop, TColors.bgGradientBottom],
+            ),
+          ),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? _buildError()
+                  : Column(
+                      children: [
+                        _buildSemesterSelector(),
+                        _buildGpaCard(_gpa, _status),
+                        const SizedBox(height: TSizes.sm),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: TSizes.lg, vertical: TSizes.sm),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text('Chi tiết môn học',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: TColors.textTitle)),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: TSizes.lg, vertical: TSizes.sm),
+                            itemCount: _activeGrades.length,
+                            itemBuilder: (context, index) =>
+                                _buildSubjectGradeCard(_activeGrades[index]),
+                          ),
+                        ),
+                      ],
+                    ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+        Center(
+          child: Column(
+            children: [
+              const Icon(Icons.cloud_off, size: 56, color: TColors.iconColor),
+              const SizedBox(height: TSizes.md),
+              Text(_error ?? '', textAlign: TextAlign.center,
+                  style: const TextStyle(color: TColors.textSubtitle)),
+              const SizedBox(height: TSizes.md),
+              ElevatedButton(onPressed: _load, child: const Text('Thử lại')),
             ],
           ),
         ),
-        child: Column(
-          children: [
-            // Semester Dropdown Selector
-            _buildSemesterSelector(),
-
-            // GPA overview Card
-            _buildGpaCard(gpa, status),
-            const SizedBox(height: TSizes.sm),
-
-            // Subject grades header
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: TSizes.lg, vertical: TSizes.sm),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Chi tiết môn học',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: TColors.textTitle,
-                  ),
-                ),
-              ),
-            ),
-
-            // Grades List
-            Expanded(
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: TSizes.lg, vertical: TSizes.sm),
-                itemCount: activeGrades.length,
-                itemBuilder: (context, index) {
-                  return _buildSubjectGradeCard(activeGrades[index]);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+      ],
     );
   }
 
@@ -131,11 +221,7 @@ class _GradesScreenState extends State<GradesScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: DropdownButtonHideUnderline(
@@ -143,24 +229,13 @@ class _GradesScreenState extends State<GradesScreen> {
           value: _selectedSemester,
           isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down, color: TColors.primary, size: 28),
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              setState(() {
-                _selectedSemester = newValue;
-              });
-            }
+          style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold),
+          onChanged: (v) {
+            if (v != null) setState(() => _selectedSemester = v);
           },
-          items: _semesters.map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
+          items: _semesters
+              .map((s) => DropdownMenuItem<String>(value: s, child: Text(s)))
+              .toList(),
         ),
       ),
     );
@@ -178,11 +253,7 @@ class _GradesScreenState extends State<GradesScreen> {
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
-            color: TColors.primary.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+          BoxShadow(color: TColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Row(
@@ -191,23 +262,11 @@ class _GradesScreenState extends State<GradesScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Điểm trung bình (GPA)',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              const Text('Điểm trung bình (GPA)',
+                  style: TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w500)),
               const SizedBox(height: 6),
-              Text(
-                gpa.toStringAsFixed(2),
-                style: const TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              Text(gpa.toStringAsFixed(2),
+                  style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white)),
               const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -215,18 +274,11 @@ class _GradesScreenState extends State<GradesScreen> {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  status,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                child: Text(status,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ],
           ),
-          // Ring display
           Stack(
             alignment: Alignment.center,
             children: [
@@ -240,14 +292,8 @@ class _GradesScreenState extends State<GradesScreen> {
                   color: Colors.white,
                 ),
               ),
-              Text(
-                '${(gpa * 10).toStringAsFixed(0)}%',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              Text('${(gpa * 10).toStringAsFixed(0)}%',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             ],
           )
         ],
@@ -262,11 +308,7 @@ class _GradesScreenState extends State<GradesScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: ExpansionTile(
@@ -280,36 +322,18 @@ class _GradesScreenState extends State<GradesScreen> {
           ),
           child: Icon(Icons.menu_book, color: grade.color, size: 22),
         ),
-        title: Text(
-          grade.name,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF333333),
-          ),
-        ),
-        subtitle: Text(
-          'ĐTB môn: ${grade.average.toStringAsFixed(1)}',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: grade.average >= 8.0 ? Colors.green : Colors.orange,
-          ),
-        ),
+        title: Text(grade.name,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
+        subtitle: Text('ĐTB môn: ${grade.average.toStringAsFixed(1)}',
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: grade.average >= 8.0 ? Colors.green : Colors.orange)),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: grade.color.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Text(
-            grade.average.toStringAsFixed(1),
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: grade.color,
-            ),
-          ),
+          decoration: BoxDecoration(color: grade.color.withOpacity(0.1), shape: BoxShape.circle),
+          child: Text(grade.average.toStringAsFixed(1),
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: grade.color)),
         ),
         children: [
           Padding(
@@ -338,13 +362,7 @@ class _GradesScreenState extends State<GradesScreen> {
   Widget _buildSubGradeItem(String label, String val) {
     return Column(
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: TColors.textSubtitle,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: TColors.textSubtitle)),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -352,14 +370,8 @@ class _GradesScreenState extends State<GradesScreen> {
             color: Colors.grey.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(
-            val,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-          ),
+          child: Text(val,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF333333))),
         ),
       ],
     );
@@ -368,12 +380,7 @@ class _GradesScreenState extends State<GradesScreen> {
 
 class _SubjectGrade {
   final String name;
-  final double m1; // mieng
-  final double m2; // 15p
-  final double m3; // 1tiet
-  final double m4; // hoc ky
-  final double average;
+  final double m1, m2, m3, m4, average;
   final Color color;
-
   _SubjectGrade(this.name, this.m1, this.m2, this.m3, this.m4, this.average, this.color);
 }

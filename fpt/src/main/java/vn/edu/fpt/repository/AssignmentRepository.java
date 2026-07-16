@@ -10,4 +10,6 @@ import java.util.UUID;
 @Repository
 public interface AssignmentRepository extends JpaRepository<Assignment, UUID> {
     List<Assignment> findByTargetClassOrderByDueDateDesc(String targetClass);
+
+    List<Assignment> findByTeacherIdOrderByDueDateDesc(UUID teacherId);
 }

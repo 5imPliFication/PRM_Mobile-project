@@ -2,6 +2,7 @@ package vn.edu.fpt.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import vn.edu.fpt.dto.response.ApiResponse;
@@ -18,6 +19,7 @@ public class StudentController {
     private final StudentService studentService;
 
     @GetMapping("/profile")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<StudentProfileResponse>> getProfile(Authentication authentication) {
         UUID accountId = (UUID) authentication.getPrincipal();
         StudentProfileResponse profile = studentService.getProfile(accountId);

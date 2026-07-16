@@ -15,6 +15,8 @@ public class LoginResponse {
 
     private String token;
     private UUID studentId;
+    private UUID teacherId;
+    private UUID parentId;
     private String fullName;
     private String className;
     private String role;
