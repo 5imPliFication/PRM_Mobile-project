@@ -113,6 +113,17 @@ export default function TeacherManager({ showToast }) {
            (t.specialization && t.specialization.toLowerCase().includes(term));
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredTeachers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTeachers = filteredTeachers.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -142,55 +153,109 @@ export default function TeacherManager({ showToast }) {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu giáo viên...</div>
       ) : (
-        <div className="table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Họ tên</th>
-                <th>Chuyên môn (Bộ môn)</th>
-                <th>Tài khoản liên kết</th>
-                <th style={{ textAlign: 'right' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTeachers.length === 0 ? (
+        <>
+          <div className="table-container">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
-                    Không tìm thấy giáo viên nào phù hợp
-                  </td>
+                  <th>Họ tên</th>
+                  <th>Chuyên môn (Bộ môn)</th>
+                  <th>Tài khoản liên kết</th>
+                  <th style={{ textAlign: 'right' }}>Hành động</th>
                 </tr>
-              ) : (
-                filteredTeachers.map(teacher => (
-                  <tr key={teacher.id}>
-                    <td style={{ fontWeight: '600' }}>{teacher.fullName}</td>
-                    <td>
-                      <span className="badge badge-teacher" style={{ fontSize: '0.85rem' }}>
-                        {teacher.specialization || 'Chưa cập nhật'}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: '0.9rem' }}>
-                      {teacher.accountPhone ? (
-                        <span style={{ fontWeight: '500' }}>{teacher.accountPhone}</span>
-                      ) : (
-                        <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Chưa liên kết</span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(teacher)}>
-                          Sửa
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(teacher.id)}>
-                          Xóa
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filteredTeachers.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
+                      Không tìm thấy giáo viên nào phù hợp
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  paginatedTeachers.map(teacher => (
+                    <tr key={teacher.id}>
+                      <td style={{ fontWeight: '600' }}>{teacher.fullName}</td>
+                      <td>
+                        <span className="badge badge-teacher" style={{ fontSize: '0.85rem' }}>
+                          {teacher.specialization || 'Chưa cập nhật'}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '0.9rem' }}>
+                        {teacher.accountPhone ? (
+                          <span style={{ fontWeight: '500' }}>{teacher.accountPhone}</span>
+                        ) : (
+                          <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Chưa liên kết</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(teacher)}>
+                            Sửa
+                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(teacher.id)}>
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '20px',
+              padding: '12px 20px',
+              background: 'rgba(18, 19, 26, 0.4)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredTeachers.length)} trong tổng số {filteredTeachers.length} mục
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Trước
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      minWidth: '36px',
+                      background: currentPage === page ? 'var(--color-accent-gradient)' : 'rgba(255, 255, 255, 0.04)',
+                      borderColor: currentPage === page ? 'var(--color-accent)' : 'var(--border-color)'
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add/Edit Modal */}

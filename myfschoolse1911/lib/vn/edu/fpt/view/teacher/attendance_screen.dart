@@ -151,23 +151,32 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Row(
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: _date,
-                          firstDate: DateTime.now().subtract(const Duration(days: 60)),
-                          lastDate: DateTime.now().add(const Duration(days: 30)),
-                        );
-                        if (picked != null && picked != _date) {
-                          setState(() => _date = picked);
-                          await _loadSessions();
-                        }
-                      },
-                      icon: const Icon(Icons.event),
-                      label: Text(DateFormat('dd/MM/yyyy').format(_date),
-                          style: const TextStyle(fontWeight: FontWeight.bold)),
+                  OutlinedButton(
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _date,
+                        firstDate: DateTime.now().subtract(const Duration(days: 60)),
+                        lastDate: DateTime.now().add(const Duration(days: 30)),
+                      );
+                      if (picked != null && picked != _date) {
+                        setState(() => _date = picked);
+                        await _loadSessions();
+                      }
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.event, size: 20),
+                        const SizedBox(width: 6),
+                        Text(
+                          DateFormat('dd/MM/yyyy').format(_date),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -255,22 +264,24 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(r['studentName'] as String? ?? '',
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(r['studentName'] as String? ?? '',
                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                      const SizedBox(height: 2),
-                      Text(marked ? 'Đã điểm danh' : 'Chưa điểm danh',
-                          style: TextStyle(fontSize: 12, color: marked ? Colors.green : TColors.textSubtitle)),
-                    ],
-                  ),
+                    ),
+                    Text(marked ? 'Đã điểm danh' : 'Chưa điểm danh',
+                        style: TextStyle(fontSize: 12, color: marked ? Colors.green : TColors.textSubtitle)),
+                  ],
                 ),
+                const SizedBox(height: 8),
                 Wrap(
                   spacing: 6,
+                  runSpacing: 6,
                   children: _kStatuses.entries.map((e) {
                     final selected = current == e.key;
                     final m = e.value;

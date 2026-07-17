@@ -172,6 +172,17 @@ export default function ParentManager({ showToast }) {
            (p.relationship && p.relationship.toLowerCase().includes(term));
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredParents.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedParents = filteredParents.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -201,138 +212,192 @@ export default function ParentManager({ showToast }) {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu phụ huynh...</div>
       ) : (
-        <div className="table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Họ tên</th>
-                <th>Quan hệ</th>
-                <th>Số điện thoại</th>
-                <th>Tài khoản liên kết</th>
-                <th>Số con em liên kết</th>
-                <th style={{ textAlign: 'right' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredParents.length === 0 ? (
+        <>
+          <div className="table-container">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
-                    Không tìm thấy phụ huynh nào phù hợp
-                  </td>
+                  <th>Họ tên</th>
+                  <th>Quan hệ</th>
+                  <th>Số điện thoại</th>
+                  <th>Tài khoản liên kết</th>
+                  <th>Số con em liên kết</th>
+                  <th style={{ textAlign: 'right' }}>Hành động</th>
                 </tr>
-              ) : (
-                filteredParents.map(parent => {
-                  const isExpanded = expandedParentId === parent.id;
-                  return (
-                    <React.Fragment key={parent.id}>
-                      <tr>
-                        <td style={{ fontWeight: '600' }}>{parent.fullName}</td>
-                        <td>
-                          <span className="badge badge-parent">
-                            {parent.relationship || 'Chưa cập nhật'}
-                          </span>
-                        </td>
-                        <td>{parent.phone || 'Chưa cập nhật'}</td>
-                        <td style={{ fontSize: '0.9rem' }}>
-                          {parent.accountPhone ? (
-                            <span style={{ fontWeight: '500' }}>{parent.accountPhone}</span>
-                          ) : (
-                            <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Chưa liên kết</span>
-                          )}
-                        </td>
-                        <td>
-                          <button 
-                            className="btn btn-secondary btn-sm"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                            onClick={() => toggleExpandParent(parent.id)}
-                          >
-                            {parent.studentIds ? parent.studentIds.length : 0} học sinh
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-                              <path d="M6 9l6 6 6-6"/>
-                            </svg>
-                          </button>
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(parent)}>
-                              Sửa
-                            </button>
-                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(parent.id)}>
-                              Xóa
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                      {isExpanded && (
+              </thead>
+              <tbody>
+                {filteredParents.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
+                      Không tìm thấy phụ huynh nào phù hợp
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedParents.map(parent => {
+                    const isExpanded = expandedParentId === parent.id;
+                    return (
+                      <React.Fragment key={parent.id}>
                         <tr>
-                          <td colSpan="6" style={{ background: 'rgba(255, 255, 255, 0.01)', padding: '20px 32px' }}>
-                            <div style={{ borderLeft: '3px solid var(--color-accent)', paddingLeft: '16px' }}>
-                              <h4 style={{ fontSize: '1rem', marginBottom: '12px' }}>Danh sách con em (Học sinh liên kết)</h4>
-                              
-                              {/* Current linked students */}
-                              {(!parent.studentNames || parent.studentNames.length === 0) ? (
-                                <p style={{ fontStyle: 'italic', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem' }}>
-                                  Chưa liên kết với học sinh nào.
-                                </p>
-                              ) : (
-                                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                                  {parent.studentNames.map((name, idx) => (
-                                    <div key={idx} style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '8px',
-                                      padding: '6px 12px',
-                                      background: 'rgba(255, 255, 255, 0.04)',
-                                      border: '1px solid var(--border-color)',
-                                      borderRadius: '8px',
-                                      fontSize: '0.9rem'
-                                    }}>
-                                      <span>{name}</span>
-                                      <button 
-                                        onClick={() => handleUnlinkStudent(parent.id, parent.studentIds[idx])}
-                                        style={{ background: 'transparent', border: 'none', color: '#fca5a5', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                                        title="Gỡ liên kết"
-                                      >
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-
-                              {/* Form to link a new student */}
-                              <div style={{ display: 'flex', gap: '12px', maxWidth: '400px', alignItems: 'center' }}>
-                                <select 
-                                  className="form-control form-select"
-                                  value={selectedStudentToLink}
-                                  onChange={(e) => setSelectedStudentToLink(e.target.value)}
-                                  style={{ padding: '8px 12px', fontSize: '0.9rem' }}
-                                >
-                                  <option value="">-- Chọn học sinh để liên kết --</option>
-                                  {students.filter(s => !parent.studentIds?.includes(s.id)).map(student => (
-                                    <option key={student.id} value={student.id}>
-                                      {student.fullName} ({student.studentCode} - {student.className})
-                                    </option>
-                                  ))}
-                                </select>
-                                <button className="btn btn-primary btn-sm" onClick={() => handleLinkStudent(parent.id)}>
-                                  Liên kết con em
-                                </button>
-                              </div>
+                          <td style={{ fontWeight: '600' }}>{parent.fullName}</td>
+                          <td>
+                            <span className="badge badge-parent">
+                              {parent.relationship || 'Chưa cập nhật'}
+                            </span>
+                          </td>
+                          <td>{parent.phone || 'Chưa cập nhật'}</td>
+                          <td style={{ fontSize: '0.9rem' }}>
+                            {parent.accountPhone ? (
+                              <span style={{ fontWeight: '500' }}>{parent.accountPhone}</span>
+                            ) : (
+                              <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Chưa liên kết</span>
+                            )}
+                          </td>
+                          <td>
+                            <button 
+                              className="btn btn-secondary btn-sm"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                              onClick={() => toggleExpandParent(parent.id)}
+                            >
+                              {parent.studentIds ? parent.studentIds.length : 0} học sinh
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                                <path d="M6 9l6 6 6-6"/>
+                              </svg>
+                            </button>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                              <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(parent)}>
+                                Sửa
+                              </button>
+                              <button className="btn btn-danger btn-sm" onClick={() => handleDelete(parent.id)}>
+                                Xóa
+                              </button>
                             </div>
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan="6" style={{ background: 'rgba(255, 255, 255, 0.01)', padding: '20px 32px' }}>
+                              <div style={{ borderLeft: '3px solid var(--color-accent)', paddingLeft: '16px' }}>
+                                <h4 style={{ fontSize: '1rem', marginBottom: '12px' }}>Danh sách con em (Học sinh liên kết)</h4>
+                                
+                                {/* Current linked students */}
+                                {(!parent.studentNames || parent.studentNames.length === 0) ? (
+                                  <p style={{ fontStyle: 'italic', color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '0.9rem' }}>
+                                    Chưa liên kết với học sinh nào.
+                                  </p>
+                                ) : (
+                                  <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                                    {parent.studentNames.map((name, idx) => (
+                                      <div key={idx} style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        padding: '6px 12px',
+                                        background: 'rgba(255, 255, 255, 0.04)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px',
+                                        fontSize: '0.9rem'
+                                      }}>
+                                        <span>{name}</span>
+                                        <button 
+                                          onClick={() => handleUnlinkStudent(parent.id, parent.studentIds[idx])}
+                                          style={{ background: 'transparent', border: 'none', color: '#fca5a5', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                                          title="Gỡ liên kết"
+                                        >
+                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Form to link a new student */}
+                                <div style={{ display: 'flex', gap: '12px', maxWidth: '400px', alignItems: 'center' }}>
+                                  <select 
+                                    className="form-control form-select"
+                                    value={selectedStudentToLink}
+                                    onChange={(e) => setSelectedStudentToLink(e.target.value)}
+                                    style={{ padding: '8px 12px', fontSize: '0.9rem' }}
+                                  >
+                                    <option value="">-- Chọn học sinh để liên kết --</option>
+                                    {students.filter(s => !parent.studentIds?.includes(s.id)).map(student => (
+                                      <option key={student.id} value={student.id}>
+                                        {student.fullName} ({student.studentCode} - {student.className})
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button className="btn btn-primary btn-sm" onClick={() => handleLinkStudent(parent.id)}>
+                                    Liên kết con em
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '20px',
+              padding: '12px 20px',
+              background: 'rgba(18, 19, 26, 0.4)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredParents.length)} trong tổng số {filteredParents.length} mục
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Trước
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      minWidth: '36px',
+                      background: currentPage === page ? 'var(--color-accent-gradient)' : 'rgba(255, 255, 255, 0.04)',
+                      borderColor: currentPage === page ? 'var(--color-accent)' : 'var(--border-color)'
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add/Edit Modal */}

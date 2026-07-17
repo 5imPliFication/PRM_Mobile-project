@@ -145,6 +145,17 @@ export default function ScheduleManager({ showToast }) {
     return matchesSearch && matchesDay;
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterDay]);
+
+  const totalPages = Math.ceil(filteredSchedules.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedSchedules = filteredSchedules.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -188,60 +199,114 @@ export default function ScheduleManager({ showToast }) {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu lịch học...</div>
       ) : (
-        <div className="table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Thứ</th>
-                <th>Thời gian</th>
-                <th>Môn học</th>
-                <th>Phòng</th>
-                <th>Giáo viên</th>
-                <th>Học sinh</th>
-                <th>Trạng thái</th>
-                <th style={{ textAlign: 'right' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSchedules.length === 0 ? (
+        <>
+          <div className="table-container">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
-                    Không tìm thấy lịch học nào phù hợp
-                  </td>
+                  <th>Thứ</th>
+                  <th>Thời gian</th>
+                  <th>Môn học</th>
+                  <th>Phòng</th>
+                  <th>Giáo viên</th>
+                  <th>Học sinh</th>
+                  <th>Trạng thái</th>
+                  <th style={{ textAlign: 'right' }}>Hành động</th>
                 </tr>
-              ) : (
-                filteredSchedules.map(sch => (
-                  <tr key={sch.id}>
-                    <td style={{ fontWeight: '600' }}>{DAYS_OF_WEEK[sch.dayOfWeek] || `Thứ ${sch.dayOfWeek}`}</td>
-                    <td style={{ fontWeight: '500' }}>{sch.startTime.substring(0, 5)} - {sch.endTime.substring(0, 5)}</td>
-                    <td>
-                      <span style={{ fontWeight: '500' }}>{sch.subjectName}</span>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{sch.subjectCode}</div>
-                    </td>
-                    <td>{sch.room}</td>
-                    <td>{sch.teacherName}</td>
-                    <td style={{ fontWeight: '500', color: 'var(--color-purple)' }}>{sch.studentName}</td>
-                    <td>
-                      <span className={`badge ${sch.status === 'Đã học' ? 'badge-student' : 'badge-parent'}`}>
-                        {sch.status || 'Sắp học'}
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(sch)}>
-                          Sửa
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(sch.id)}>
-                          Xóa
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filteredSchedules.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
+                      Không tìm thấy lịch học nào phù hợp
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  paginatedSchedules.map(sch => (
+                    <tr key={sch.id}>
+                      <td style={{ fontWeight: '600' }}>{DAYS_OF_WEEK[sch.dayOfWeek] || `Thứ ${sch.dayOfWeek}`}</td>
+                      <td style={{ fontWeight: '500' }}>{sch.startTime.substring(0, 5)} - {sch.endTime.substring(0, 5)}</td>
+                      <td>
+                        <span style={{ fontWeight: '500' }}>{sch.subjectName}</span>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{sch.subjectCode}</div>
+                      </td>
+                      <td>{sch.room}</td>
+                      <td>{sch.teacherName}</td>
+                      <td style={{ fontWeight: '500', color: 'var(--color-purple)' }}>{sch.studentName}</td>
+                      <td>
+                        <span className={`badge ${sch.status === 'Đã học' ? 'badge-student' : 'badge-parent'}`}>
+                          {sch.status || 'Sắp học'}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(sch)}>
+                            Sửa
+                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(sch.id)}>
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '20px',
+              padding: '12px 20px',
+              background: 'rgba(18, 19, 26, 0.4)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredSchedules.length)} trong tổng số {filteredSchedules.length} mục
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Trước
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      minWidth: '36px',
+                      background: currentPage === page ? 'var(--color-accent-gradient)' : 'rgba(255, 255, 255, 0.04)',
+                      borderColor: currentPage === page ? 'var(--color-accent)' : 'var(--border-color)'
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add/Edit Modal */}

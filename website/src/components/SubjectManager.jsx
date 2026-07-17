@@ -91,6 +91,17 @@ export default function SubjectManager({ showToast }) {
     return s.name.toLowerCase().includes(term) || s.code.toLowerCase().includes(term);
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredSubjects.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedSubjects = filteredSubjects.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -120,43 +131,98 @@ export default function SubjectManager({ showToast }) {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu môn học...</div>
       ) : (
-        <div className="table-container" style={{ maxWidth: '800px' }}>
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Mã môn học</th>
-                <th>Tên môn học</th>
-                <th style={{ textAlign: 'right' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSubjects.length === 0 ? (
+        <>
+          <div className="table-container" style={{ maxWidth: '800px' }}>
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
-                    Không tìm thấy môn học nào phù hợp
-                  </td>
+                  <th>Mã môn học</th>
+                  <th>Tên môn học</th>
+                  <th style={{ textAlign: 'right' }}>Hành động</th>
                 </tr>
-              ) : (
-                filteredSubjects.map(sub => (
-                  <tr key={sub.id}>
-                    <td style={{ fontWeight: '600', color: 'var(--color-accent)' }}>{sub.code}</td>
-                    <td style={{ fontWeight: '500' }}>{sub.name}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(sub)}>
-                          Sửa
-                        </button>
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(sub.id)}>
-                          Xóa
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filteredSubjects.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
+                      Không tìm thấy môn học nào phù hợp
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  paginatedSubjects.map(sub => (
+                    <tr key={sub.id}>
+                      <td style={{ fontWeight: '600', color: 'var(--color-accent)' }}>{sub.code}</td>
+                      <td style={{ fontWeight: '500' }}>{sub.name}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(sub)}>
+                            Sửa
+                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(sub.id)}>
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '20px',
+              padding: '12px 20px',
+              background: 'rgba(18, 19, 26, 0.4)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              flexWrap: 'wrap',
+              gap: '12px',
+              maxWidth: '800px'
+            }}>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredSubjects.length)} trong tổng số {filteredSubjects.length} mục
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Trước
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      minWidth: '36px',
+                      background: currentPage === page ? 'var(--color-accent-gradient)' : 'rgba(255, 255, 255, 0.04)',
+                      borderColor: currentPage === page ? 'var(--color-accent)' : 'var(--border-color)'
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Add/Edit Modal */}

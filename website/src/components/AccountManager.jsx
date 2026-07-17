@@ -103,6 +103,17 @@ export default function AccountManager({ showToast }) {
     return matchesSearch && matchesFilter;
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterRole]);
+
+  const totalPages = Math.ceil(filteredAccounts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedAccounts = filteredAccounts.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
@@ -144,63 +155,117 @@ export default function AccountManager({ showToast }) {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu tài khoản...</div>
       ) : (
-        <div className="table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Số điện thoại</th>
-                <th>Vai trò</th>
-                <th>Người liên kết</th>
-                <th>Trạng thái</th>
-                <th>Ngày tạo</th>
-                <th style={{ textAlign: 'right' }}>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAccounts.length === 0 ? (
+        <>
+          <div className="table-container">
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
-                    Không tìm thấy tài khoản nào phù hợp
-                  </td>
+                  <th>Số điện thoại</th>
+                  <th>Vai trò</th>
+                  <th>Người liên kết</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày tạo</th>
+                  <th style={{ textAlign: 'right' }}>Hành động</th>
                 </tr>
-              ) : (
-                filteredAccounts.map(acc => (
-                  <tr key={acc.id}>
-                    <td style={{ fontWeight: '600' }}>{acc.phone}</td>
-                    <td>
-                      <span className={`badge badge-${acc.role.toLowerCase()}`}>
-                        {acc.role}
-                      </span>
-                    </td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      {acc.linkedName || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Chưa liên kết</span>}
-                    </td>
-                    <td>
-                      <span className={`badge ${acc.isActive ? 'badge-active' : 'badge-inactive'}`}>
-                        {acc.isActive ? 'Hoạt động' : 'Khóa'}
-                      </span>
-                    </td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                      {new Date(acc.createdAt).toLocaleDateString('vi-VN')}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                        <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(acc)}>
-                          Sửa
-                        </button>
-                        {acc.role !== 'ADMIN' && (
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(acc.id)}>
-                            Xóa
-                          </button>
-                        )}
-                      </div>
+              </thead>
+              <tbody>
+                {filteredAccounts.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
+                      Không tìm thấy tài khoản nào phù hợp
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  paginatedAccounts.map(acc => (
+                    <tr key={acc.id}>
+                      <td style={{ fontWeight: '600' }}>{acc.phone}</td>
+                      <td>
+                        <span className={`badge badge-${acc.role.toLowerCase()}`}>
+                          {acc.role}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        {acc.linkedName || <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Chưa liên kết</span>}
+                      </td>
+                      <td>
+                        <span className={`badge ${acc.isActive ? 'badge-active' : 'badge-inactive'}`}>
+                          {acc.isActive ? 'Hoạt động' : 'Khóa'}
+                        </span>
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        {new Date(acc.createdAt).toLocaleDateString('vi-VN')}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(acc)}>
+                            Sửa
+                          </button>
+                          {acc.role !== 'ADMIN' && (
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(acc.id)}>
+                              Xóa
+                          </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: '20px',
+              padding: '12px 20px',
+              background: 'rgba(18, 19, 26, 0.4)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredAccounts.length)} trong tổng số {filteredAccounts.length} mục
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Trước
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} btn-sm`}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      padding: '6px 12px',
+                      minWidth: '36px',
+                      background: currentPage === page ? 'var(--color-accent-gradient)' : 'rgba(255, 255, 255, 0.04)',
+                      borderColor: currentPage === page ? 'var(--color-accent)' : 'var(--border-color)'
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '6px 12px', minWidth: '40px' }}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Standard HTML Native Dialog for Add/Edit Form */}
