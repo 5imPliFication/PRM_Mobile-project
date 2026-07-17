@@ -15,4 +15,8 @@ public interface AttendanceRepository extends JpaRepository<Attendance, UUID> {
     List<Attendance> findByStudentIdOrderByAttendanceDateDesc(UUID studentId);
     Optional<Attendance> findByScheduleIdAndStudentIdAndAttendanceDate(UUID scheduleId, UUID studentId, LocalDate attendanceDate);
     boolean existsByScheduleIdAndStudentIdAndAttendanceDate(UUID scheduleId, UUID studentId, LocalDate attendanceDate);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE Attendance a SET a.markedBy = null WHERE a.markedBy.id = :teacherId")
+    void nullifyMarkedByTeacher(@org.springframework.data.repository.query.Param("teacherId") UUID teacherId);
 }

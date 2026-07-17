@@ -14,4 +14,6 @@ public interface ScheduleRepository extends JpaRepository<Schedule, UUID> {
 
     List<Schedule> findByTeacherIdOrderByDayOfWeekAscStartTimeAsc(UUID teacherId);
     List<Schedule> findByTeacherIdAndDayOfWeekOrderByStartTime(UUID teacherId, Integer dayOfWeek);
+
+    List<Schedule> findBySubjectId(UUID subjectId);
 }
