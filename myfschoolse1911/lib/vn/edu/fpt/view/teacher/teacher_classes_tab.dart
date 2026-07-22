@@ -12,6 +12,7 @@ class TeacherClassesTab extends StatefulWidget {
 
 class _TeacherClassesTabState extends State<TeacherClassesTab> {
   List<dynamic> _classes = const [];
+  String _homeroomClass = '';
   bool _loading = true;
   String? _error;
 
@@ -28,8 +29,17 @@ class _TeacherClassesTabState extends State<TeacherClassesTab> {
       _error = null;
     });
     try {
-      final data = await apiService.getTeacherClasses();
-      if (mounted) setState(() => _classes = data);
+      final results = await Future.wait([
+        apiService.getTeacherClasses(),
+        apiService.getTeacherProfile(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _classes = results[0] as List;
+          final profile = results[1] as Map<String, dynamic>;
+          _homeroomClass = profile['homeroomClass'] as String? ?? '';
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString().replaceAll('Exception: ', ''));
     } finally {
@@ -77,8 +87,27 @@ class _TeacherClassesTabState extends State<TeacherClassesTab> {
                                   backgroundColor: TColors.primary.withOpacity(0.1),
                                   child: Icon(Icons.class_rounded, color: TColors.primary),
                                 ),
-                                title: Text('Lớp $c',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                title: Row(
+                                  children: [
+                                    Text('Lớp $c',
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    if (c == _homeroomClass) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.orange),
+                                        ),
+                                        child: const Text(
+                                          'Chủ nhiệm',
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.orange),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                                 subtitle: const Text('Xem học sinh và điểm danh'),
                                 trailing: const Icon(Icons.chevron_right, color: TColors.iconColor),
                                 onTap: () async {

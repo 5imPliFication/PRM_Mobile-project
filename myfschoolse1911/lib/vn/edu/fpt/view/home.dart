@@ -7,6 +7,7 @@ import 'package:myfschoolse1911/vn/edu/fpt/view/grades.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/notifications.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/assignments.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/api_service.dart';
+import 'package:myfschoolse1911/vn/edu/fpt/view/applications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String? fullName;
@@ -118,6 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const GradesScreen()));
     } else if (label == 'Thông báo') {
       Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+    } else if (label == 'Đơn từ') {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const ApplicationsScreen()));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -396,6 +399,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _ServiceItem(Icons.assignment_rounded, 'Bài tập', const Color(0xFFEF5350)),
       _ServiceItem(Icons.grade_rounded, 'Bảng điểm', const Color(0xFFFF9800)),
       _ServiceItem(Icons.campaign_rounded, 'Thông báo', const Color(0xFF42A5F5)),
+      _ServiceItem(Icons.description_rounded, 'Đơn từ', const Color(0xFF66BB6A)),
     ];
 
     return Padding(

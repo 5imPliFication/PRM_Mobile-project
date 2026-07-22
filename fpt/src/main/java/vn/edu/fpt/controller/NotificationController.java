@@ -20,7 +20,7 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'PARENT')")
     public ResponseEntity<ApiResponse<List<NotificationResponse>>> getNotifications(
             Authentication authentication) {
 
@@ -30,7 +30,7 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}/read")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'PARENT')")
     public ResponseEntity<ApiResponse<NotificationResponse>> markAsRead(
             Authentication authentication,
             @PathVariable UUID id) {
@@ -41,7 +41,7 @@ public class NotificationController {
     }
 
     @PutMapping("/read-all")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'TEACHER', 'PARENT')")
     public ResponseEntity<ApiResponse<String>> markAllAsRead(Authentication authentication) {
         UUID accountId = (UUID) authentication.getPrincipal();
         notificationService.markAllAsRead(accountId);

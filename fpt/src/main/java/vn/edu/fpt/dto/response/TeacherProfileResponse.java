@@ -15,5 +15,6 @@ public class TeacherProfileResponse {
     private UUID id;
     private String fullName;
     private String specialization;
+    private String homeroomClass;
     private String phone;
 }

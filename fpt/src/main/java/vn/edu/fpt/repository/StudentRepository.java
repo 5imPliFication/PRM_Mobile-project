@@ -16,10 +16,11 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     Optional<Student> findByStudentCode(String studentCode);
     Optional<Student> findByAccountPhone(String phone);
 
-    List<Student> findByClassName(String className);
+    List<Student> findBySchoolClassId(UUID classId);
+    List<Student> findBySchoolClassName(String className);
 
-    @Query("SELECT DISTINCT s FROM Student s WHERE s.className = :className AND EXISTS " +
-            "(SELECT sc FROM Schedule sc WHERE sc.student.id = s.id AND sc.teacher.id = :teacherId)")
+    @Query("SELECT DISTINCT s FROM Student s WHERE s.schoolClass.name = :className AND EXISTS " +
+            "(SELECT sc FROM Schedule sc WHERE sc.schoolClass.id = s.schoolClass.id AND sc.teacher.id = :teacherId)")
     List<Student> findStudentsOfTeacherInClass(@Param("teacherId") UUID teacherId,
                                                 @Param("className") String className);
 }

@@ -17,6 +17,7 @@ import vn.edu.fpt.dto.response.TeacherProfileResponse;
 import vn.edu.fpt.entity.Assignment;
 import vn.edu.fpt.entity.Attendance;
 import vn.edu.fpt.entity.Schedule;
+import vn.edu.fpt.entity.SchoolClass;
 import vn.edu.fpt.entity.Student;
 import vn.edu.fpt.entity.Submission;
 import vn.edu.fpt.entity.Subject;
@@ -24,6 +25,7 @@ import vn.edu.fpt.entity.Teacher;
 import vn.edu.fpt.repository.AssignmentRepository;
 import vn.edu.fpt.repository.AttendanceRepository;
 import vn.edu.fpt.repository.ScheduleRepository;
+import vn.edu.fpt.repository.SchoolClassRepository;
 import vn.edu.fpt.repository.StudentRepository;
 import vn.edu.fpt.repository.SubjectRepository;
 import vn.edu.fpt.repository.SubmissionRepository;
@@ -49,6 +51,7 @@ public class TeacherService {
     private final AssignmentRepository assignmentRepository;
     private final SubmissionRepository submissionRepository;
     private final SubjectRepository subjectRepository;
+    private final SchoolClassRepository schoolClassRepository;
 
     public Teacher resolveTeacher(UUID accountId) {
         return teacherRepository.findByAccountId(accountId)
@@ -57,10 +60,15 @@ public class TeacherService {
 
     public TeacherProfileResponse getProfile(UUID accountId) {
         Teacher t = resolveTeacher(accountId);
+        String homeroomClass = schoolClassRepository.findByHomeroomTeacherId(t.getId())
+                .map(SchoolClass::getName)
+                .orElse(null);
+
         return TeacherProfileResponse.builder()
                 .id(t.getId())
                 .fullName(t.getFullName())
                 .specialization(t.getSpecialization())
+                .homeroomClass(homeroomClass)
                 .phone(accountPhone(t))
                 .build();
     }
@@ -74,9 +82,9 @@ public class TeacherService {
         Teacher t = resolveTeacher(accountId);
         List<Schedule> sessions = scheduleRepository.findByTeacherIdOrderByDayOfWeekAscStartTimeAsc(t.getId());
         return sessions.stream()
-                .map(Schedule::getStudent)
+                .map(Schedule::getSchoolClass)
                 .filter(java.util.Objects::nonNull)
-                .map(Student::getClassName)
+                .map(SchoolClass::getName)
                 .filter(c -> c != null && !c.isBlank())
                 .distinct()
                 .sorted()
@@ -124,14 +132,12 @@ public class TeacherService {
             sessions = scheduleRepository.findByTeacherIdOrderByDayOfWeekAscStartTimeAsc(t.getId());
         }
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
-        // Schedule is per-student; dedupe by (day, subject, start, end, room) so the
-        // teacher sees one row per class period rather than one per enrolled student.
         Map<String, ScheduleResponse> deduped = new LinkedHashMap<>();
         for (Schedule s : sessions) {
             String start = s.getStartTime().format(fmt);
             String end = s.getEndTime().format(fmt);
             String subject = s.getSubject() != null ? s.getSubject().getName() : "";
-            String key = s.getDayOfWeek() + "|" + subject + "|" + start + "|" + end + "|" + s.getRoom();
+            String key = s.getDayOfWeek() + "|" + subject + "|" + start + "|" + end + "|" + s.getRoom() + "|" + (s.getSchoolClass() != null ? s.getSchoolClass().getName() : "");
             deduped.computeIfAbsent(key, k -> ScheduleResponse.builder()
                     .id(s.getId())
                     .subject(subject)
@@ -156,10 +162,7 @@ public class TeacherService {
             throw new RuntimeException("Bạn không có quyền với tiết học này");
         }
 
-        // Schedule is per-student; collect all schedule rows of this teacher for the same
-        // subject+day+time+room on that date. Simpler: any student linked to this teacher via
-        // a schedule whose subject/day/time/room match the session. We approximate by class.
-        String className = session.getStudent().getClassName();
+        String className = session.getSchoolClass() != null ? session.getSchoolClass().getName() : "";
         List<Student> students = studentRepository.findStudentsOfTeacherInClass(t.getId(), className);
 
         List<Attendance> existing = attendanceRepository

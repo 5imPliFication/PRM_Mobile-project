@@ -20,17 +20,17 @@ public class Grade {
     @Column(nullable = false)
     private String semester; // "HK1", "HK2"
 
-    @Column(name = "oral_score")
-    private Double oralScore;
-
     @Column(name = "fifteen_min_score")
     private Double fifteenMinScore;
 
-    @Column(name = "one_period_score")
-    private Double onePeriodScore;
+    @Column(name = "forty_five_min_score")
+    private Double fortyFiveMinScore;
 
-    @Column(name = "semester_score")
-    private Double semesterScore;
+    @Column(name = "half_semester_score")
+    private Double halfSemesterScore;
+
+    @Column(name = "end_semester_score")
+    private Double endSemesterScore;
 
     @Column
     private Double average;

@@ -5,6 +5,7 @@ import 'package:myfschoolse1911/vn/edu/fpt/view/login.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/teacher/teacher_classes_tab.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/teacher/teacher_assignments_tab.dart';
 import 'package:myfschoolse1911/vn/edu/fpt/view/teacher/teacher_profile_tab.dart';
+import 'package:myfschoolse1911/vn/edu/fpt/view/teacher/teacher_applications_tab.dart';
 
 class TeacherHome extends StatefulWidget {
   final String? fullName;
@@ -51,6 +52,7 @@ class _TeacherHomeState extends State<TeacherHome> {
     final tabs = [
       const TeacherClassesTab(),
       const TeacherAssignmentsTab(),
+      const TeacherApplicationsTab(),
       TeacherProfileTab(profile: _profile, fullName: _name, onLogout: _logout),
     ];
     return Scaffold(
@@ -66,6 +68,7 @@ class _TeacherHomeState extends State<TeacherHome> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.class_rounded), label: 'Lớp học'),
           BottomNavigationBarItem(icon: Icon(Icons.assignment_rounded), label: 'Bài tập'),
+          BottomNavigationBarItem(icon: Icon(Icons.description_rounded), label: 'Đơn từ'),
           BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Cá nhân'),
         ],
       ),

@@ -2,14 +2,6 @@
 INSERT INTO accounts (id, phone, password, role, is_active, created_at)
 VALUES ('11111111-1111-1111-1111-111111111111', '0912345678', '$2a$12$ZvfhG/4WM5nIkqgG57GbDeBaZOTSpg5Uc7MybbBoo8GPvIeL1Kdgi', 'STUDENT', true, NOW());
 
--- Insert Student
-INSERT INTO students (id, student_code, full_name, class_name, academic_year, campus, email, address, date_of_birth, program, status, homeroom_teacher, account_id, created_at)
-VALUES ('22222222-2222-2222-2222-222222222222', 'FPT08921', 'Nguyễn Văn A', '11A1', '2023 - 2026', 'FPT School Cần Thơ', 'anv.se191101@fpt.edu.vn', '123 Đường 3/2, Ninh Kiều, Cần Thơ', '2008-08-15', 'Phổ thông chất lượng cao', 'Đang học', 'Cô Trần Thị C', '11111111-1111-1111-1111-111111111111', NOW());
-
--- Insert Parent
-INSERT INTO parents (id, full_name, phone, occupation, relationship, student_id)
-VALUES (uuid_generate_v4(), 'Nguyễn Văn B', '0912987654', 'Kỹ sư', 'Cha', '22222222-2222-2222-2222-222222222222');
-
 -- Insert Teachers
 INSERT INTO teachers (id, full_name, specialization) VALUES
 ('33333333-3333-3333-3333-333333333330', 'Thầy Nguyễn Văn B', 'Toán học'),
@@ -21,6 +13,19 @@ INSERT INTO teachers (id, full_name, specialization) VALUES
 ('33333333-3333-3333-3333-333333333336', 'Thầy Lê Văn G', 'Sinh học'),
 ('33333333-3333-3333-3333-333333333337', 'Cô Hoàng Thị H', 'Lịch sử'),
 ('33333333-3333-3333-3333-333333333338', 'Thầy Đỗ Văn I', 'Tin học');
+
+-- Insert Classes
+INSERT INTO classes (id, name, grade_level, academic_year, campus, homeroom_teacher_id) VALUES
+('55555555-0000-0000-0000-0000000011a1', '11A1', 11, '2023 - 2026', 'FPT School Cần Thơ', '33333333-3333-3333-3333-333333333330'),
+('55555555-0000-0000-0000-0000000011a2', '11A2', 11, '2023 - 2026', 'FPT School Cần Thơ', NULL);
+
+-- Insert Student
+INSERT INTO students (id, student_code, full_name, class_id, academic_year, campus, email, address, date_of_birth, program, status, account_id, created_at)
+VALUES ('22222222-2222-2222-2222-222222222222', 'FPT08921', 'Nguyễn Văn A', '55555555-0000-0000-0000-0000000011a1', '2023 - 2026', 'FPT School Cần Thơ', 'anv.se191101@fpt.edu.vn', '123 Đường 3/2, Ninh Kiều, Cần Thơ', '2008-08-15', 'Phổ thông chất lượng cao', 'Đang học', '11111111-1111-1111-1111-111111111111', NOW());
+
+-- Insert Parent
+INSERT INTO parents (id, full_name, phone, occupation, relationship, student_id)
+VALUES (uuid_generate_v4(), 'Nguyễn Văn B', '0912987654', 'Kỹ sư', 'Cha', '22222222-2222-2222-2222-222222222222');
 
 -- Insert Subjects
 INSERT INTO subjects (id, name, code) VALUES
@@ -34,20 +39,20 @@ INSERT INTO subjects (id, name, code) VALUES
 ('44444444-4444-4444-4444-444444444447', 'Tin học', 'IT11'),
 ('44444444-4444-4444-4444-444444444448', 'Chào cờ', 'CC');
 
--- Insert Schedules
+-- Insert Schedules (per Class)
 -- Monday (2)
-INSERT INTO schedules (id, day_of_week, start_time, end_time, room, status, subject_id, teacher_id, student_id) VALUES
-(uuid_generate_v4(), 2, '07:30', '08:15', 'Phòng A201', 'Đã học', '44444444-4444-4444-4444-444444444440', '33333333-3333-3333-3333-333333333330', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 2, '08:25', '09:10', 'Phòng B102', 'Đã học', '44444444-4444-4444-4444-444444444441', '33333333-3333-3333-3333-333333333331', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 2, '09:20', '10:05', 'Phòng C305', 'Đã học', '44444444-4444-4444-4444-444444444442', '33333333-3333-3333-3333-333333333332', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 2, '10:15', '11:00', 'Sân trường', 'Đã học', '44444444-4444-4444-4444-444444444448', '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222');
+INSERT INTO schedules (id, day_of_week, start_time, end_time, room, status, subject_id, teacher_id, class_id) VALUES
+(uuid_generate_v4(), 2, '07:30', '08:15', 'Phòng A201', 'Đã học', '44444444-4444-4444-4444-444444444440', '33333333-3333-3333-3333-333333333330', '55555555-0000-0000-0000-0000000011a1'),
+(uuid_generate_v4(), 2, '08:25', '09:10', 'Phòng B102', 'Đã học', '44444444-4444-4444-4444-444444444441', '33333333-3333-3333-3333-333333333331', '55555555-0000-0000-0000-0000000011a1'),
+(uuid_generate_v4(), 2, '09:20', '10:05', 'Phòng C305', 'Đã học', '44444444-4444-4444-4444-444444444442', '33333333-3333-3333-3333-333333333332', '55555555-0000-0000-0000-0000000011a1'),
+(uuid_generate_v4(), 2, '10:15', '11:00', 'Sân trường', 'Đã học', '44444444-4444-4444-4444-444444444448', '33333333-3333-3333-3333-333333333333', '55555555-0000-0000-0000-0000000011a1');
 
 -- Tuesday (3)
-INSERT INTO schedules (id, day_of_week, start_time, end_time, room, status, subject_id, teacher_id, student_id) VALUES
-(uuid_generate_v4(), 3, '07:30', '08:15', 'Phòng Hóa', 'Sắp học', '44444444-4444-4444-4444-444444444443', '33333333-3333-3333-3333-333333333334', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 3, '08:25', '09:10', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333335', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 3, '09:20', '10:05', 'Phòng Sinh', 'Sắp học', '44444444-4444-4444-4444-444444444445', '33333333-3333-3333-3333-333333333336', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 3, '10:15', '11:00', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444446', '33333333-3333-3333-3333-333333333337', '22222222-2222-2222-2222-222222222222');
+INSERT INTO schedules (id, day_of_week, start_time, end_time, room, status, subject_id, teacher_id, class_id) VALUES
+(uuid_generate_v4(), 3, '07:30', '08:15', 'Phòng Hóa', 'Sắp học', '44444444-4444-4444-4444-444444444443', '33333333-3333-3333-3333-333333333334', '55555555-0000-0000-0000-0000000011a1'),
+(uuid_generate_v4(), 3, '08:25', '09:10', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333335', '55555555-0000-0000-0000-0000000011a1'),
+(uuid_generate_v4(), 3, '09:20', '10:05', 'Phòng Sinh', 'Sắp học', '44444444-4444-4444-4444-444444444445', '33333333-3333-3333-3333-333333333336', '55555555-0000-0000-0000-0000000011a1'),
+(uuid_generate_v4(), 3, '10:15', '11:00', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444446', '33333333-3333-3333-3333-333333333337', '55555555-0000-0000-0000-0000000011a1');
 
 -- Assignments
 INSERT INTO assignments (id, title, description, due_date, target_class, created_at, subject_id, teacher_id) VALUES
@@ -64,17 +69,30 @@ INSERT INTO submissions (id, file_url, grade, submitted_at, assignment_id, stude
 (uuid_generate_v4(), 'http://example.com/soan_van.pdf', 8.0, NOW() - INTERVAL '6 DAYS', '55555555-5555-5555-5555-555555555554', '22222222-2222-2222-2222-222222222222');
 
 -- Grades
-INSERT INTO grades (id, semester, oral_score, fifteen_min_score, one_period_score, semester_score, average, subject_id, student_id) VALUES
-(uuid_generate_v4(), 'Học kỳ 1', 8.5, 9.0, 8.0, 8.5, 8.3, '44444444-4444-4444-4444-444444444440', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 1', 8.0, 7.5, 9.0, 8.5, 8.3, '44444444-4444-4444-4444-444444444441', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 1', 9.0, 9.5, 8.5, 9.0, 9.1, '44444444-4444-4444-4444-444444444443', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 1', 7.5, 8.0, 8.0, 8.5, 8.1, '44444444-4444-4444-4444-444444444445', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 1', 8.0, 8.0, 7.5, 8.0, 7.9, '44444444-4444-4444-4444-444444444444', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 1', 9.0, 8.5, 9.0, 9.5, 9.1, '44444444-4444-4444-4444-444444444442', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 1', 9.5, 10.0, 9.5, 9.5, 9.6, '44444444-4444-4444-4444-444444444447', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 1', 8.0, 7.0, 8.0, 8.5, 7.9, '44444444-4444-4444-4444-444444444446', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 2', 9.0, 8.5, 9.0, 9.5, 9.1, '44444444-4444-4444-4444-444444444440', '22222222-2222-2222-2222-222222222222'),
-(uuid_generate_v4(), 'Học kỳ 2', 8.5, 9.0, 8.5, 8.0, 8.4, '44444444-4444-4444-4444-444444444441', '22222222-2222-2222-2222-222222222222');
+INSERT INTO grades (id, semester, fifteen_min_score, forty_five_min_score, half_semester_score, end_semester_score, average, subject_id, student_id) VALUES
+(uuid_generate_v4(), 'Học kỳ 1', 9.0, 8.0, 8.8, 8.5, 8.5, '44444444-4444-4444-4444-444444444440', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 1', 7.5, 9.0, 8.3, 8.5, 8.4, '44444444-4444-4444-4444-444444444441', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 1', 9.5, 8.5, 9.3, 9.0, 9.0, '44444444-4444-4444-4444-444444444443', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 1', 8.0, 8.0, 8.3, 8.5, 8.3, '44444444-4444-4444-4444-444444444445', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 1', 8.0, 7.5, 7.8, 8.0, 7.8, '44444444-4444-4444-4444-444444444444', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 1', 8.5, 9.0, 8.8, 9.5, 9.1, '44444444-4444-4444-4444-444444444442', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 1', 10.0, 9.5, 9.8, 9.5, 9.6, '44444444-4444-4444-4444-444444444447', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 1', 7.0, 8.0, 7.8, 8.5, 8.0, '44444444-4444-4444-4444-444444444446', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 2', 8.5, 9.0, 8.8, 9.5, 9.1, '44444444-4444-4444-4444-444444444440', '22222222-2222-2222-2222-222222222222'),
+(uuid_generate_v4(), 'Học kỳ 2', 9.0, 8.5, 8.5, 8.0, 8.3, '44444444-4444-4444-4444-444444444441', '22222222-2222-2222-2222-222222222222');
+
+-- Applications (demo data)
+INSERT INTO applications (id, type, title, content, status, student_id, created_at) VALUES
+(uuid_generate_v4(), 'ABSENT_REQUEST', 'Xin nghỉ phép ngày 22/07',
+ 'Em bị ốm, xin phép nghỉ học ngày 22/07/2026. Em sẽ bổ sung giấy xác nhận của bác sĩ sau.',
+ 'PENDING', '22222222-2222-2222-2222-222222222222', NOW() - INTERVAL '1 DAY'),
+(uuid_generate_v4(), 'RESCHEDULE', 'Xin đổi lịch học bù',
+ 'Em xin được đổi lịch học bù từ thứ 7 sang thứ 6 vì gia đình có việc.',
+ 'APPROVED', '22222222-2222-2222-2222-222222222222', NOW() - INTERVAL '5 DAYS');
+
+UPDATE applications SET responded_by = '33333333-3333-3333-3333-333333333330',
+                        updated_at = NOW() - INTERVAL '4 DAYS'
+WHERE status = 'APPROVED';
 
 -- Notifications
 INSERT INTO notifications (id, title, body, category, is_read, created_at, student_id) VALUES

@@ -51,6 +51,7 @@ class _TeacherProfileTabState extends State<TeacherProfileTab> {
     final name = _profile?['fullName'] as String? ?? widget.fullName;
     final specialization = _profile?['specialization'] as String? ?? '--';
     final phone = _profile?['phone'] as String? ?? '--';
+    final homeroomClass = _profile?['homeroomClass'] as String? ?? '';
     final initial = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'G';
     return Scaffold(
       appBar: AppBar(
@@ -96,10 +97,11 @@ class _TeacherProfileTabState extends State<TeacherProfileTab> {
                           const SizedBox(height: TSizes.md),
                           Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: TColors.textTitle)),
                           const SizedBox(height: 4),
-                          const Text('Giáo viên', style: TextStyle(color: TColors.textSubtitle, fontWeight: FontWeight.w500)),
+                          Text(homeroomClass.isNotEmpty ? 'Giáo viên chủ nhiệm' : 'Giáo viên bộ môn', style: const TextStyle(color: TColors.textSubtitle, fontWeight: FontWeight.w500)),
                           const SizedBox(height: TSizes.lg),
                           _infoCard(title: 'Thông tin', children: [
                             _row(Icons.book, 'Bộ môn', specialization),
+                            _row(Icons.class_rounded, 'Chủ nhiệm lớp', homeroomClass.isNotEmpty ? homeroomClass : 'Không'),
                             _row(Icons.phone, 'Số điện thoại', phone),
                           ]),
                           const SizedBox(height: TSizes.xl),

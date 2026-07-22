@@ -10,11 +10,27 @@ CREATE TABLE accounts (
     updated_at TIMESTAMP
 );
 
+CREATE TABLE teachers (
+    id UUID PRIMARY KEY,
+    full_name VARCHAR(255) NOT NULL,
+    specialization VARCHAR(255),
+    account_id UUID REFERENCES accounts(id)
+);
+
+CREATE TABLE classes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    grade_level INTEGER,
+    academic_year VARCHAR(255),
+    campus VARCHAR(255),
+    homeroom_teacher_id UUID REFERENCES teachers(id)
+);
+
 CREATE TABLE students (
     id UUID PRIMARY KEY,
     student_code VARCHAR(255) NOT NULL UNIQUE,
     full_name VARCHAR(255) NOT NULL,
-    class_name VARCHAR(255) NOT NULL,
+    class_id UUID REFERENCES classes(id),
     academic_year VARCHAR(255),
     campus VARCHAR(255),
     email VARCHAR(255),
@@ -22,7 +38,6 @@ CREATE TABLE students (
     date_of_birth DATE,
     program VARCHAR(255),
     status VARCHAR(255),
-    homeroom_teacher VARCHAR(255),
     account_id UUID REFERENCES accounts(id),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP
@@ -35,13 +50,6 @@ CREATE TABLE parents (
     occupation VARCHAR(255),
     relationship VARCHAR(255),
     student_id UUID NOT NULL REFERENCES students(id)
-);
-
-CREATE TABLE teachers (
-    id UUID PRIMARY KEY,
-    full_name VARCHAR(255) NOT NULL,
-    specialization VARCHAR(255),
-    account_id UUID REFERENCES accounts(id)
 );
 
 CREATE TABLE subjects (
@@ -59,7 +67,7 @@ CREATE TABLE schedules (
     status VARCHAR(255),
     subject_id UUID NOT NULL REFERENCES subjects(id),
     teacher_id UUID NOT NULL REFERENCES teachers(id),
-    student_id UUID NOT NULL REFERENCES students(id)
+    class_id UUID NOT NULL REFERENCES classes(id)
 );
 
 CREATE TABLE assignments (
@@ -85,13 +93,26 @@ CREATE TABLE submissions (
 CREATE TABLE grades (
     id UUID PRIMARY KEY,
     semester VARCHAR(255) NOT NULL,
-    oral_score DOUBLE PRECISION,
     fifteen_min_score DOUBLE PRECISION,
-    one_period_score DOUBLE PRECISION,
-    semester_score DOUBLE PRECISION,
+    forty_five_min_score DOUBLE PRECISION,
+    half_semester_score DOUBLE PRECISION,
+    end_semester_score DOUBLE PRECISION,
     average DOUBLE PRECISION,
     subject_id UUID NOT NULL REFERENCES subjects(id),
     student_id UUID NOT NULL REFERENCES students(id)
+);
+
+CREATE TABLE applications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    response_note TEXT,
+    student_id UUID NOT NULL REFERENCES students(id),
+    responded_by UUID REFERENCES teachers(id),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE notifications (
@@ -101,5 +122,6 @@ CREATE TABLE notifications (
     category VARCHAR(255) NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    student_id UUID NOT NULL REFERENCES students(id)
+    student_id UUID REFERENCES students(id),
+    account_id UUID REFERENCES accounts(id)
 );

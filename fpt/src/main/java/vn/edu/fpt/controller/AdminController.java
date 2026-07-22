@@ -51,6 +51,30 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok("Xóa tài khoản thành công", null));
     }
 
+    // Classes
+    @GetMapping("/classes")
+    public ResponseEntity<ApiResponse<List<AdminClassResponse>>> getAllClasses() {
+        return ResponseEntity.ok(ApiResponse.ok(adminService.getAllClasses()));
+    }
+
+    @PostMapping("/classes")
+    public ResponseEntity<ApiResponse<AdminClassResponse>> createClass(
+            @Valid @RequestBody AdminClassRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Tạo lớp học thành công", adminService.createClass(request)));
+    }
+
+    @PutMapping("/classes/{id}")
+    public ResponseEntity<ApiResponse<AdminClassResponse>> updateClass(
+            @PathVariable UUID id, @Valid @RequestBody AdminClassRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Cập nhật lớp học thành công", adminService.updateClass(id, request)));
+    }
+
+    @DeleteMapping("/classes/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteClass(@PathVariable UUID id) {
+        adminService.deleteClass(id);
+        return ResponseEntity.ok(ApiResponse.ok("Xóa lớp học thành công", null));
+    }
+
     // Students
     @GetMapping("/students")
     public ResponseEntity<ApiResponse<List<AdminStudentResponse>>> getAllStudents() {
@@ -183,5 +207,23 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Void>> deleteSchedule(@PathVariable UUID id) {
         adminService.deleteSchedule(id);
         return ResponseEntity.ok(ApiResponse.ok("Xóa lịch học thành công", null));
+    }
+
+    // Notifications
+    @GetMapping("/notifications")
+    public ResponseEntity<ApiResponse<List<AdminNotificationResponse>>> getAllAdminNotifications() {
+        return ResponseEntity.ok(ApiResponse.ok(adminService.getAllAdminNotifications()));
+    }
+
+    @PostMapping("/notifications")
+    public ResponseEntity<ApiResponse<AdminNotificationResponse>> sendNotification(
+            @Valid @RequestBody AdminNotificationRequest request) {
+        return ResponseEntity.ok(ApiResponse.ok("Gửi thông báo thành công", adminService.sendNotification(request)));
+    }
+
+    @DeleteMapping("/notifications/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteAdminNotification(@PathVariable UUID id) {
+        adminService.deleteAdminNotification(id);
+        return ResponseEntity.ok(ApiResponse.ok("Xóa thông báo thành công", null));
     }
 }

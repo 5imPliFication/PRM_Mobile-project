@@ -11,8 +11,7 @@ public class AdminStudentRequest {
     private String studentCode;
     @NotBlank(message = "Họ tên không được để trống")
     private String fullName;
-    @NotBlank(message = "Lớp không được để trống")
-    private String className;
+    private UUID classId;
     private String academicYear;
     private String campus;
     private String email;
@@ -20,6 +19,5 @@ public class AdminStudentRequest {
     private LocalDate dateOfBirth;
     private String program;
     private String status;
-    private String homeroomTeacher;
     private UUID accountId;
 }

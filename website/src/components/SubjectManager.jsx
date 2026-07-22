@@ -132,7 +132,7 @@ export default function SubjectManager({ showToast }) {
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu môn học...</div>
       ) : (
         <>
-          <div className="table-container" style={{ maxWidth: '800px' }}>
+          <div className="table-container" style={{ maxWidth: '800px', justifyContent: 'center', margin: '0 auto' }}>
             <table className="admin-table">
               <thead>
                 <tr>
@@ -182,7 +182,6 @@ export default function SubjectManager({ showToast }) {
               borderRadius: 'var(--radius-sm)',
               flexWrap: 'wrap',
               gap: '12px',
-              maxWidth: '800px'
             }}>
               <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                 Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredSubjects.length)} trong tổng số {filteredSubjects.length} mục

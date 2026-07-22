@@ -15,7 +15,7 @@ export default function ScheduleManager({ showToast }) {
   const [schedules, setSchedules] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [classes, setClasses] = useState([]);
   
   const [loading, setLoading] = useState(false);
   const [filterDay, setFilterDay] = useState('ALL');
@@ -32,7 +32,7 @@ export default function ScheduleManager({ showToast }) {
     status: 'Sắp học',
     subjectId: '',
     teacherId: '',
-    studentId: ''
+    classId: ''
   });
 
   const dialogRef = useRef(null);
@@ -62,8 +62,8 @@ export default function ScheduleManager({ showToast }) {
       const tc = await api.getTeachers();
       setTeachers(tc);
 
-      const st = await api.getStudents();
-      setStudents(st);
+      const cl = await api.getClasses();
+      setClasses(cl);
     } catch (err) {
       console.error('Failed to load dropdowns', err);
     }
@@ -80,7 +80,7 @@ export default function ScheduleManager({ showToast }) {
       status: 'Sắp học',
       subjectId: subjects[0]?.id || '',
       teacherId: teachers[0]?.id || '',
-      studentId: students[0]?.id || ''
+      classId: classes[0]?.id || ''
     });
     dialogRef.current?.showModal();
   };
@@ -96,7 +96,7 @@ export default function ScheduleManager({ showToast }) {
       status: schedule.status || 'Sắp học',
       subjectId: schedule.subjectId,
       teacherId: schedule.teacherId,
-      studentId: schedule.studentId
+      classId: schedule.classId
     });
     dialogRef.current?.showModal();
   };
@@ -137,10 +137,10 @@ export default function ScheduleManager({ showToast }) {
 
   const filteredSchedules = schedules.filter(s => {
     const term = searchTerm.toLowerCase();
-    const matchesSearch = s.studentName.toLowerCase().includes(term) ||
-                          s.teacherName.toLowerCase().includes(term) ||
-                          s.subjectName.toLowerCase().includes(term) ||
-                          s.room.toLowerCase().includes(term);
+    const matchesSearch = (s.className && s.className.toLowerCase().includes(term)) ||
+                          (s.teacherName && s.teacherName.toLowerCase().includes(term)) ||
+                          (s.subjectName && s.subjectName.toLowerCase().includes(term)) ||
+                          (s.room && s.room.toLowerCase().includes(term));
     const matchesDay = filterDay === 'ALL' || s.dayOfWeek.toString() === filterDay;
     return matchesSearch && matchesDay;
   });
@@ -160,10 +160,10 @@ export default function ScheduleManager({ showToast }) {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '4px' }}>Quản lý lịch học (Schedule)</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Sắp xếp, quản lý lịch giảng dạy của giáo viên và thời khóa biểu của học sinh</p>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '4px' }}>Quản lý lịch học theo Lớp</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Sắp xếp, quản lý lịch giảng dạy của giáo viên và thời khóa biểu của các lớp</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenAddModal} disabled={subjects.length === 0 || teachers.length === 0 || students.length === 0}>
+        <button className="btn btn-primary" onClick={handleOpenAddModal} disabled={subjects.length === 0 || teachers.length === 0 || classes.length === 0}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -178,7 +178,7 @@ export default function ScheduleManager({ showToast }) {
           <input
             type="text"
             className="form-control"
-            placeholder="Tìm theo học sinh, giáo viên, môn học, phòng..."
+            placeholder="Tìm theo lớp học, giáo viên, môn học, phòng..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -198,144 +198,99 @@ export default function ScheduleManager({ showToast }) {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu lịch học...</div>
+      ) : filteredSchedules.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Không có lịch học nào phù hợp</div>
       ) : (
         <>
-          <div className="table-container">
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
             <table className="admin-table">
               <thead>
                 <tr>
                   <th>Thứ</th>
                   <th>Thời gian</th>
+                  <th>Lớp học</th>
                   <th>Môn học</th>
-                  <th>Phòng</th>
                   <th>Giáo viên</th>
-                  <th>Học sinh</th>
+                  <th>Phòng học</th>
                   <th>Trạng thái</th>
-                  <th style={{ textAlign: 'right' }}>Hành động</th>
+                  <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredSchedules.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
-                      Không tìm thấy lịch học nào phù hợp
+                {paginatedSchedules.map(schedule => (
+                  <tr key={schedule.id}>
+                    <td>
+                      <span className="badge" style={{ background: 'rgba(243, 111, 33, 0.1)', color: 'var(--color-accent)', fontWeight: '600' }}>
+                        {DAYS_OF_WEEK[schedule.dayOfWeek] || `Thứ ${schedule.dayOfWeek}`}
+                      </span>
+                    </td>
+                    <td style={{ fontWeight: '500' }}>
+                      {schedule.startTime?.substring(0, 5)} - {schedule.endTime?.substring(0, 5)}
+                    </td>
+                    <td>
+                      <span className="badge badge-student">{schedule.className}</span>
+                    </td>
+                    <td style={{ fontWeight: '600' }}>{schedule.subjectName}</td>
+                    <td>{schedule.teacherName}</td>
+                    <td>
+                      <span style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>
+                        {schedule.room}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge ${schedule.status === 'Đã học' ? 'badge-inactive' : 'badge-active'}`}>
+                        {schedule.status || 'Sắp học'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleOpenEditModal(schedule)}>Sửa</button>
+                        <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.2)' }} onClick={() => handleDelete(schedule.id)}>Xóa</button>
+                      </div>
                     </td>
                   </tr>
-                ) : (
-                  paginatedSchedules.map(sch => (
-                    <tr key={sch.id}>
-                      <td style={{ fontWeight: '600' }}>{DAYS_OF_WEEK[sch.dayOfWeek] || `Thứ ${sch.dayOfWeek}`}</td>
-                      <td style={{ fontWeight: '500' }}>{sch.startTime.substring(0, 5)} - {sch.endTime.substring(0, 5)}</td>
-                      <td>
-                        <span style={{ fontWeight: '500' }}>{sch.subjectName}</span>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{sch.subjectCode}</div>
-                      </td>
-                      <td>{sch.room}</td>
-                      <td>{sch.teacherName}</td>
-                      <td style={{ fontWeight: '500', color: 'var(--color-purple)' }}>{sch.studentName}</td>
-                      <td>
-                        <span className={`badge ${sch.status === 'Đã học' ? 'badge-student' : 'badge-parent'}`}>
-                          {sch.status || 'Sắp học'}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                          <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(sch)}>
-                            Sửa
-                          </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(sch.id)}>
-                            Xóa
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
 
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '20px',
-              padding: '12px 20px',
-              background: 'rgba(18, 19, 26, 0.4)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-sm)',
-              flexWrap: 'wrap',
-              gap: '12px'
-            }}>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredSchedules.length)} trong tổng số {filteredSchedules.length} mục
-              </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  style={{ padding: '6px 12px', minWidth: '40px' }}
-                >
-                  Trước
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                    onClick={() => setCurrentPage(page)}
-                    style={{
-                      padding: '6px 12px',
-                      minWidth: '36px',
-                      background: currentPage === page ? 'var(--color-accent-gradient)' : 'rgba(255, 255, 255, 0.04)',
-                      borderColor: currentPage === page ? 'var(--color-accent)' : 'var(--border-color)'
-                    }}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  style={{ padding: '6px 12px', minWidth: '40px' }}
-                >
-                  Sau
-                </button>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
+              <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>Trước</button>
+              <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: '0.9rem' }}>Trang {currentPage} / {totalPages}</span>
+              <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>Sau</button>
             </div>
           )}
         </>
       )}
 
-      {/* Add/Edit Modal */}
-      <dialog ref={dialogRef}>
-        <div className="modal-content" style={{ maxWidth: '600px' }}>
-          <div className="modal-header">
-            <h3 className="modal-title">{isEditMode ? 'Cập nhật lịch học' : 'Tạo mới lịch học'}</h3>
-            <button className="modal-close" onClick={handleCloseModal}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+      {/* Modal Dialog for Add/Edit Schedule */}
+      <dialog ref={dialogRef} className="modal">
+        <div style={{ width: '100%', maxWidth: '500px' }} className="modal-content">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>
+              {isEditMode ? 'Cập nhật lịch học' : 'Thêm lịch học theo Lớp'}
+            </h3>
+            <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
           </div>
+
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">Thứ học *</label>
+                <label className="form-label">Thứ trong tuần *</label>
                 <select
                   className="form-control form-select"
                   value={formData.dayOfWeek}
-                  onChange={(e) => setFormData({ ...formData, dayOfWeek: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, dayOfWeek: parseInt(e.target.value, 10) })}
+                  required
                 >
-                  <option value="2">Thứ Hai</option>
-                  <option value="3">Thứ Ba</option>
-                  <option value="4">Thứ Tư</option>
-                  <option value="5">Thứ Năm</option>
-                  <option value="6">Thứ Sáu</option>
-                  <option value="7">Thứ Bảy</option>
+                  <option value={2}>Thứ Hai</option>
+                  <option value={3}>Thứ Ba</option>
+                  <option value={4}>Thứ Tư</option>
+                  <option value={5}>Thứ Năm</option>
+                  <option value={6}>Thứ Sáu</option>
+                  <option value={7}>Thứ Bảy</option>
                 </select>
               </div>
 
@@ -351,26 +306,45 @@ export default function ScheduleManager({ showToast }) {
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Giờ bắt đầu *</label>
-                <input
-                  type="time"
-                  className="form-control"
-                  required
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group">
+                  <label className="form-label">Giờ bắt đầu *</label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    required
+                    value={formData.startTime}
+                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Giờ kết thúc *</label>
+                  <input
+                    type="time"
+                    className="form-control"
+                    required
+                    value={formData.endTime}
+                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                  />
+                </div>
               </div>
 
               <div className="form-group">
-                <label className="form-label">Giờ kết thúc *</label>
-                <input
-                  type="time"
-                  className="form-control"
+                <label className="form-label">Lớp học *</label>
+                <select
+                  className="form-control form-select"
+                  value={formData.classId}
+                  onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
                   required
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                />
+                >
+                  <option value="">-- Chọn lớp học --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.homeroomTeacherName ? `(GVCN: ${c.homeroomTeacherName})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
@@ -381,6 +355,7 @@ export default function ScheduleManager({ showToast }) {
                   onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
                   required
                 >
+                  <option value="">-- Chọn môn học --</option>
                   {subjects.map(sub => (
                     <option key={sub.id} value={sub.id}>{sub.name} ({sub.code})</option>
                   ))}
@@ -395,22 +370,9 @@ export default function ScheduleManager({ showToast }) {
                   onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
                   required
                 >
+                  <option value="">-- Chọn giáo viên --</option>
                   {teachers.map(t => (
                     <option key={t.id} value={t.id}>{t.fullName} ({t.specialization || 'Khác'})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Học sinh *</label>
-                <select
-                  className="form-control form-select"
-                  value={formData.studentId}
-                  onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                  required
-                >
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.fullName} ({s.studentCode} - {s.className})</option>
                   ))}
                 </select>
               </div>
@@ -430,7 +392,7 @@ export default function ScheduleManager({ showToast }) {
               </div>
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ marginTop: '20px' }}>
               <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Hủy</button>
               <button type="submit" className="btn btn-primary">{isEditMode ? 'Cập nhật' : 'Tạo mới'}</button>
             </div>

@@ -511,6 +511,70 @@ class ApiService {
     }
     throw Exception(data['message'] ?? 'Từ chối thất bại');
   }
+
+  // ---------------- Student Applications ----------------
+  Future<List<dynamic>> getMyApplications() async {
+    final token = await getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/applications/me'),
+      headers: _getHeaders(token),
+    );
+    final data = _decode(response);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] as List;
+    }
+    throw Exception(data['message'] ?? 'Failed to get applications');
+  }
+
+  Future<Map<String, dynamic>> submitApplication({
+    required String type,
+    required String title,
+    required String content,
+  }) async {
+    final token = await getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/applications'),
+      headers: _getHeaders(token),
+      body: jsonEncode({'type': type, 'title': title, 'content': content}),
+    );
+    final data = _decode(response);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'];
+    }
+    throw Exception(data['message'] ?? 'Failed to submit application');
+  }
+
+  // ---------------- Teacher Applications ----------------
+  Future<List<dynamic>> getClassApplications() async {
+    final token = await getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/applications/class'),
+      headers: _getHeaders(token),
+    );
+    final data = _decode(response);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'] as List;
+    }
+    throw Exception(data['message'] ?? 'Failed to get class applications');
+  }
+
+  Future<Map<String, dynamic>> respondApplication({
+    required String applicationId,
+    required String status,
+    String? responseNote,
+  }) async {
+    final token = await getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/applications/$applicationId/respond'),
+      headers: _getHeaders(token),
+      body: jsonEncode({'status': status, 'responseNote': responseNote}),
+    );
+    final data = _decode(response);
+    if (response.statusCode == 200 && data['success'] == true) {
+      return data['data'];
+    }
+    throw Exception(data['message'] ?? 'Failed to respond to application');
+  }
 }
 
 // Singleton instance

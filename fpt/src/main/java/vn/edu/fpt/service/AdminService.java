@@ -12,6 +12,7 @@ import vn.edu.fpt.repository.*;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -29,6 +30,8 @@ public class AdminService {
     private final AssignmentRepository assignmentRepository;
     private final AttendanceRepository attendanceRepository;
     private final ParentLinkRequestRepository parentLinkRequestRepository;
+    private final SchoolClassRepository schoolClassRepository;
+    private final NotificationRepository notificationRepository;
     private final PasswordEncoder passwordEncoder;
 
     // ===== Stats =====
@@ -61,7 +64,7 @@ public class AdminService {
             return AdminAccountResponse.builder()
                     .id(account.getId())
                     .phone(account.getPhone())
-                    .role(account.getRole().name())
+                    .role(account.getRole() != null ? account.getRole().name() : null)
                     .isActive(account.getIsActive())
                     .createdAt(account.getCreatedAt())
                     .linkedName(linkedName)
@@ -71,7 +74,7 @@ public class AdminService {
 
     public AdminAccountResponse createAccount(AdminAccountRequest request) {
         if (accountRepository.findByPhone(request.getPhone()).isPresent()) {
-            throw new IllegalArgumentException("Số điện thoại đã tồn tại trên hệ thống");
+            throw new IllegalArgumentException("Số điện thoại đã được sử dụng");
         }
 
         Account account = Account.builder()
@@ -82,7 +85,15 @@ public class AdminService {
                 .build();
 
         Account saved = accountRepository.save(account);
-        return mapToAccountResponse(saved);
+
+        return AdminAccountResponse.builder()
+                .id(saved.getId())
+                .phone(saved.getPhone())
+                .role(saved.getRole() != null ? saved.getRole().name() : null)
+                .isActive(saved.getIsActive())
+                .createdAt(saved.getCreatedAt())
+                .linkedName("")
+                .build();
     }
 
     public AdminAccountResponse updateAccount(UUID id, AdminAccountRequest request) {
@@ -91,71 +102,154 @@ public class AdminService {
 
         accountRepository.findByPhone(request.getPhone()).ifPresent(existing -> {
             if (!existing.getId().equals(id)) {
-                throw new IllegalArgumentException("Số điện thoại đã tồn tại trên hệ thống");
+                throw new IllegalArgumentException("Số điện thoại đã được sử dụng");
             }
         });
 
         account.setPhone(request.getPhone());
-        account.setRole(request.getRole());
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            account.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+        if (request.getRole() != null) {
+            account.setRole(request.getRole());
+        }
         if (request.getIsActive() != null) {
             account.setIsActive(request.getIsActive());
         }
-        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
-            account.setPassword(passwordEncoder.encode(request.getPassword()));
-        }
 
         Account saved = accountRepository.save(account);
-        return mapToAccountResponse(saved);
+
+        String linkedName = "";
+        if (saved.getStudent() != null) {
+            linkedName = saved.getStudent().getFullName() + " (Học sinh)";
+        } else if (saved.getTeacher() != null) {
+            linkedName = saved.getTeacher().getFullName() + " (Giáo viên)";
+        } else if (saved.getParent() != null) {
+            linkedName = saved.getParent().getFullName() + " (Phụ huynh)";
+        } else if (saved.getRole() == Account.Role.ADMIN) {
+            linkedName = "Quản trị viên";
+        }
+
+        return AdminAccountResponse.builder()
+                .id(saved.getId())
+                .phone(saved.getPhone())
+                .role(saved.getRole() != null ? saved.getRole().name() : null)
+                .isActive(saved.getIsActive())
+                .createdAt(saved.getCreatedAt())
+                .linkedName(linkedName)
+                .build();
     }
 
     public void deleteAccount(UUID id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản"));
-
-        // Cascade parent deleting because of lack of JPA cascade
-        parentRepository.findByAccountId(id).ifPresent(parent -> {
-            parentLinkRequestRepository.deleteAll(parentLinkRequestRepository.findByParentAccountIdOrderByCreatedAtDesc(id));
-            parent.getStudents().clear();
-            parentRepository.save(parent);
-            parentRepository.delete(parent);
-        });
-
-        // Linked Student & Teacher records are cascade deleted by mappedBy settings in Account entity
         accountRepository.delete(account);
     }
 
-    private AdminAccountResponse mapToAccountResponse(Account account) {
-        return AdminAccountResponse.builder()
-                .id(account.getId())
-                .phone(account.getPhone())
-                .role(account.getRole().name())
-                .isActive(account.getIsActive())
-                .createdAt(account.getCreatedAt())
+    // ===== Classes =====
+    @Transactional(readOnly = true)
+    public List<AdminClassResponse> getAllClasses() {
+        return schoolClassRepository.findAll().stream().map(c -> {
+            Teacher hr = c.getHomeroomTeacher();
+            int studentCount = studentRepository.findBySchoolClassId(c.getId()).size();
+            return AdminClassResponse.builder()
+                    .id(c.getId())
+                    .name(c.getName())
+                    .gradeLevel(c.getGradeLevel())
+                    .academicYear(c.getAcademicYear())
+                    .campus(c.getCampus())
+                    .homeroomTeacherId(hr != null ? hr.getId() : null)
+                    .homeroomTeacherName(hr != null ? hr.getFullName() : null)
+                    .studentCount(studentCount)
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    public AdminClassResponse createClass(AdminClassRequest request) {
+        if (schoolClassRepository.findByName(request.getName()).isPresent()) {
+            throw new IllegalArgumentException("Tên lớp đã tồn tại");
+        }
+
+        Teacher homeroomTeacher = null;
+        if (request.getHomeroomTeacherId() != null) {
+            homeroomTeacher = teacherRepository.findById(request.getHomeroomTeacherId())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giáo viên chủ nhiệm"));
+        }
+
+        SchoolClass sc = SchoolClass.builder()
+                .name(request.getName())
+                .gradeLevel(request.getGradeLevel())
+                .academicYear(request.getAcademicYear())
+                .campus(request.getCampus())
+                .homeroomTeacher(homeroomTeacher)
+                .build();
+
+        SchoolClass saved = schoolClassRepository.save(sc);
+        return mapToClassResponse(saved);
+    }
+
+    public AdminClassResponse updateClass(UUID id, AdminClassRequest request) {
+        SchoolClass sc = schoolClassRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp học"));
+
+        schoolClassRepository.findByName(request.getName()).ifPresent(existing -> {
+            if (!existing.getId().equals(id)) {
+                throw new IllegalArgumentException("Tên lớp đã tồn tại");
+            }
+        });
+
+        Teacher homeroomTeacher = null;
+        if (request.getHomeroomTeacherId() != null) {
+            homeroomTeacher = teacherRepository.findById(request.getHomeroomTeacherId())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giáo viên chủ nhiệm"));
+        }
+
+        sc.setName(request.getName());
+        sc.setGradeLevel(request.getGradeLevel());
+        sc.setAcademicYear(request.getAcademicYear());
+        sc.setCampus(request.getCampus());
+        sc.setHomeroomTeacher(homeroomTeacher);
+
+        SchoolClass saved = schoolClassRepository.save(sc);
+        return mapToClassResponse(saved);
+    }
+
+    public void deleteClass(UUID id) {
+        SchoolClass sc = schoolClassRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp học"));
+
+        // Delete schedules of this class
+        scheduleRepository.deleteAll(scheduleRepository.findBySchoolClassIdOrderByDayOfWeekAscStartTimeAsc(id));
+
+        // Unlink students from this class
+        List<Student> students = studentRepository.findBySchoolClassId(id);
+        for (Student s : students) {
+            s.setSchoolClass(null);
+            studentRepository.save(s);
+        }
+
+        schoolClassRepository.delete(sc);
+    }
+
+    private AdminClassResponse mapToClassResponse(SchoolClass sc) {
+        Teacher hr = sc.getHomeroomTeacher();
+        int studentCount = studentRepository.findBySchoolClassId(sc.getId()).size();
+        return AdminClassResponse.builder()
+                .id(sc.getId())
+                .name(sc.getName())
+                .gradeLevel(sc.getGradeLevel())
+                .academicYear(sc.getAcademicYear())
+                .campus(sc.getCampus())
+                .homeroomTeacherId(hr != null ? hr.getId() : null)
+                .homeroomTeacherName(hr != null ? hr.getFullName() : null)
+                .studentCount(studentCount)
                 .build();
     }
 
     // ===== Students =====
     @Transactional(readOnly = true)
     public List<AdminStudentResponse> getAllStudents() {
-        return studentRepository.findAll().stream().map(student -> {
-            Account acc = student.getAccount();
-            return AdminStudentResponse.builder()
-                    .id(student.getId())
-                    .studentCode(student.getStudentCode())
-                    .fullName(student.getFullName())
-                    .className(student.getClassName())
-                    .academicYear(student.getAcademicYear())
-                    .campus(student.getCampus())
-                    .email(student.getEmail())
-                    .address(student.getAddress())
-                    .dateOfBirth(student.getDateOfBirth())
-                    .program(student.getProgram())
-                    .status(student.getStatus())
-                    .homeroomTeacher(student.getHomeroomTeacher())
-                    .accountId(acc != null ? acc.getId() : null)
-                    .accountPhone(acc != null ? acc.getPhone() : null)
-                    .build();
-        }).collect(Collectors.toList());
+        return studentRepository.findAll().stream().map(this::mapToStudentResponse).collect(Collectors.toList());
     }
 
     public AdminStudentResponse createStudent(AdminStudentRequest request) {
@@ -172,10 +266,16 @@ public class AdminService {
             }
         }
 
+        SchoolClass schoolClass = null;
+        if (request.getClassId() != null) {
+            schoolClass = schoolClassRepository.findById(request.getClassId())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp học"));
+        }
+
         Student student = Student.builder()
                 .studentCode(request.getStudentCode())
                 .fullName(request.getFullName())
-                .className(request.getClassName())
+                .schoolClass(schoolClass)
                 .academicYear(request.getAcademicYear())
                 .campus(request.getCampus())
                 .email(request.getEmail())
@@ -183,7 +283,6 @@ public class AdminService {
                 .dateOfBirth(request.getDateOfBirth())
                 .program(request.getProgram())
                 .status(request.getStatus() != null ? request.getStatus() : "Đang học")
-                .homeroomTeacher(request.getHomeroomTeacher())
                 .account(account)
                 .build();
 
@@ -213,9 +312,15 @@ public class AdminService {
             });
         }
 
+        SchoolClass schoolClass = null;
+        if (request.getClassId() != null) {
+            schoolClass = schoolClassRepository.findById(request.getClassId())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp học"));
+        }
+
         student.setStudentCode(request.getStudentCode());
         student.setFullName(request.getFullName());
-        student.setClassName(request.getClassName());
+        student.setSchoolClass(schoolClass);
         student.setAcademicYear(request.getAcademicYear());
         student.setCampus(request.getCampus());
         student.setEmail(request.getEmail());
@@ -225,7 +330,6 @@ public class AdminService {
         if (request.getStatus() != null) {
             student.setStatus(request.getStatus());
         }
-        student.setHomeroomTeacher(request.getHomeroomTeacher());
         student.setAccount(account);
 
         Student saved = studentRepository.save(student);
@@ -249,9 +353,6 @@ public class AdminService {
         // Delete Attendances
         attendanceRepository.deleteAll(attendanceRepository.findByStudentIdOrderByAttendanceDateDesc(id));
 
-        // Delete Schedules
-        scheduleRepository.deleteAll(scheduleRepository.findByStudentIdOrderByDayOfWeekAscStartTimeAsc(id));
-
         student.setAccount(null);
         studentRepository.save(student);
         studentRepository.delete(student);
@@ -263,6 +364,7 @@ public class AdminService {
                 .id(student.getId())
                 .studentCode(student.getStudentCode())
                 .fullName(student.getFullName())
+                .classId(student.getSchoolClass() != null ? student.getSchoolClass().getId() : null)
                 .className(student.getClassName())
                 .academicYear(student.getAcademicYear())
                 .campus(student.getCampus())
@@ -280,16 +382,7 @@ public class AdminService {
     // ===== Teachers =====
     @Transactional(readOnly = true)
     public List<AdminTeacherResponse> getAllTeachers() {
-        return teacherRepository.findAll().stream().map(teacher -> {
-            Account acc = teacher.getAccount();
-            return AdminTeacherResponse.builder()
-                    .id(teacher.getId())
-                    .fullName(teacher.getFullName())
-                    .specialization(teacher.getSpecialization())
-                    .accountId(acc != null ? acc.getId() : null)
-                    .accountPhone(acc != null ? acc.getPhone() : null)
-                    .build();
-        }).collect(Collectors.toList());
+        return teacherRepository.findAll().stream().map(this::mapToTeacherResponse).collect(Collectors.toList());
     }
 
     public AdminTeacherResponse createTeacher(AdminTeacherRequest request) {
@@ -349,6 +442,12 @@ public class AdminService {
         // Nullify marked_by in attendances
         attendanceRepository.nullifyMarkedByTeacher(id);
 
+        // Nullify homeroomTeacher in classes
+        schoolClassRepository.findByHomeroomTeacherId(id).ifPresent(c -> {
+            c.setHomeroomTeacher(null);
+            schoolClassRepository.save(c);
+        });
+
         teacher.setAccount(null);
         teacherRepository.save(teacher);
         teacherRepository.delete(teacher);
@@ -356,10 +455,15 @@ public class AdminService {
 
     private AdminTeacherResponse mapToTeacherResponse(Teacher teacher) {
         Account acc = teacher.getAccount();
+        String homeroomClass = schoolClassRepository.findByHomeroomTeacherId(teacher.getId())
+                .map(SchoolClass::getName)
+                .orElse(null);
+
         return AdminTeacherResponse.builder()
                 .id(teacher.getId())
                 .fullName(teacher.getFullName())
                 .specialization(teacher.getSpecialization())
+                .homeroomClass(homeroomClass)
                 .accountId(acc != null ? acc.getId() : null)
                 .accountPhone(acc != null ? acc.getPhone() : null)
                 .build();
@@ -550,21 +654,7 @@ public class AdminService {
     // ===== Schedules =====
     @Transactional(readOnly = true)
     public List<AdminScheduleResponse> getAllSchedules() {
-        return scheduleRepository.findAll().stream().map(schedule -> AdminScheduleResponse.builder()
-                .id(schedule.getId())
-                .dayOfWeek(schedule.getDayOfWeek())
-                .startTime(schedule.getStartTime())
-                .endTime(schedule.getEndTime())
-                .room(schedule.getRoom())
-                .status(schedule.getStatus())
-                .subjectId(schedule.getSubject().getId())
-                .subjectName(schedule.getSubject().getName())
-                .subjectCode(schedule.getSubject().getCode())
-                .teacherId(schedule.getTeacher().getId())
-                .teacherName(schedule.getTeacher().getFullName())
-                .studentId(schedule.getStudent().getId())
-                .studentName(schedule.getStudent().getFullName())
-                .build()).collect(Collectors.toList());
+        return scheduleRepository.findAll().stream().map(this::mapToScheduleResponse).collect(Collectors.toList());
     }
 
     public AdminScheduleResponse createSchedule(AdminScheduleRequest request) {
@@ -572,8 +662,8 @@ public class AdminService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy môn học"));
         Teacher teacher = teacherRepository.findById(request.getTeacherId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giáo viên"));
-        Student student = studentRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy học sinh"));
+        SchoolClass schoolClass = schoolClassRepository.findById(request.getClassId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp học"));
 
         Schedule schedule = Schedule.builder()
                 .dayOfWeek(request.getDayOfWeek())
@@ -583,7 +673,7 @@ public class AdminService {
                 .status(request.getStatus() != null ? request.getStatus() : "Sắp học")
                 .subject(subject)
                 .teacher(teacher)
-                .student(student)
+                .schoolClass(schoolClass)
                 .build();
 
         Schedule saved = scheduleRepository.save(schedule);
@@ -597,8 +687,8 @@ public class AdminService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy môn học"));
         Teacher teacher = teacherRepository.findById(request.getTeacherId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giáo viên"));
-        Student student = studentRepository.findById(request.getStudentId())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy học sinh"));
+        SchoolClass schoolClass = schoolClassRepository.findById(request.getClassId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy lớp học"));
 
         schedule.setDayOfWeek(request.getDayOfWeek());
         schedule.setStartTime(LocalTime.parse(request.getStartTime()));
@@ -609,7 +699,7 @@ public class AdminService {
         }
         schedule.setSubject(subject);
         schedule.setTeacher(teacher);
-        schedule.setStudent(student);
+        schedule.setSchoolClass(schoolClass);
 
         Schedule saved = scheduleRepository.save(schedule);
         return mapToScheduleResponse(saved);
@@ -634,8 +724,117 @@ public class AdminService {
                 .subjectCode(schedule.getSubject().getCode())
                 .teacherId(schedule.getTeacher().getId())
                 .teacherName(schedule.getTeacher().getFullName())
-                .studentId(schedule.getStudent().getId())
-                .studentName(schedule.getStudent().getFullName())
+                .classId(schedule.getSchoolClass().getId())
+                .className(schedule.getSchoolClass().getName())
                 .build();
+    }
+
+    // ===== Notifications =====
+    @Transactional(readOnly = true)
+    public List<AdminNotificationResponse> getAllAdminNotifications() {
+        List<Notification> all = notificationRepository.findAll();
+        Map<String, List<Notification>> grouped = new java.util.LinkedHashMap<>();
+        for (Notification n : all) {
+            String key = n.getTitle() + "|" + n.getBody() + "|" + (n.getCreatedAt() != null ? n.getCreatedAt().toString() : "");
+            grouped.computeIfAbsent(key, k -> new ArrayList<>()).add(n);
+        }
+
+        List<AdminNotificationResponse> result = new ArrayList<>();
+        for (List<Notification> group : grouped.values()) {
+            if (group.isEmpty()) continue;
+            Notification first = group.get(0);
+            result.add(AdminNotificationResponse.builder()
+                    .id(first.getId())
+                    .title(first.getTitle())
+                    .content(first.getBody())
+                    .category(first.getCategory())
+                    .targetGroup("Broadcasting (" + group.size() + " người nhận)")
+                    .createdAt(first.getCreatedAt())
+                    .recipientCount(group.size())
+                    .build());
+        }
+        result.sort((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()));
+        return result;
+    }
+
+    public AdminNotificationResponse sendNotification(AdminNotificationRequest request) {
+        String category = (request.getCategory() != null && !request.getCategory().isBlank())
+                ? request.getCategory()
+                : "Thông báo";
+        String targetGroup = request.getTargetGroup() != null ? request.getTargetGroup().toUpperCase() : "ALL";
+
+        List<Notification> toSave = new ArrayList<>();
+
+        if ("STUDENT".equals(targetGroup) || "ALL".equals(targetGroup)) {
+            List<Student> students = studentRepository.findAll();
+            for (Student s : students) {
+                toSave.add(Notification.builder()
+                        .title(request.getTitle())
+                        .body(request.getContent())
+                        .category(category)
+                        .isRead(false)
+                        .student(s)
+                        .account(s.getAccount())
+                        .build());
+            }
+        }
+
+        if ("TEACHER".equals(targetGroup) || "ALL".equals(targetGroup)) {
+            List<Teacher> teachers = teacherRepository.findAll();
+            for (Teacher t : teachers) {
+                if (t.getAccount() != null) {
+                    toSave.add(Notification.builder()
+                            .title(request.getTitle())
+                            .body(request.getContent())
+                            .category(category)
+                            .isRead(false)
+                            .account(t.getAccount())
+                            .build());
+                }
+            }
+        }
+
+        if ("PARENT".equals(targetGroup) || "ALL".equals(targetGroup)) {
+            List<Parent> parents = parentRepository.findAll();
+            for (Parent p : parents) {
+                if (p.getAccount() != null) {
+                    toSave.add(Notification.builder()
+                            .title(request.getTitle())
+                            .body(request.getContent())
+                            .category(category)
+                            .isRead(false)
+                            .account(p.getAccount())
+                            .build());
+                }
+            }
+        }
+
+        if (toSave.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy người nhận nào phù hợp");
+        }
+
+        List<Notification> saved = notificationRepository.saveAll(toSave);
+        Notification sample = saved.get(0);
+
+        return AdminNotificationResponse.builder()
+                .id(sample.getId())
+                .title(sample.getTitle())
+                .content(sample.getBody())
+                .category(sample.getCategory())
+                .targetGroup(targetGroup)
+                .createdAt(sample.getCreatedAt())
+                .recipientCount(saved.size())
+                .build();
+    }
+
+    public void deleteAdminNotification(UUID id) {
+        Notification n = notificationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông báo"));
+
+        List<Notification> matching = notificationRepository.findAll().stream()
+                .filter(item -> item.getTitle().equals(n.getTitle()) && item.getBody().equals(n.getBody()))
+                .collect(Collectors.toList());
+
+        notificationRepository.deleteAll(matching);
     }
 }

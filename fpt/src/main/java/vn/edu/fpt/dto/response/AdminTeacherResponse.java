@@ -10,6 +10,7 @@ public class AdminTeacherResponse {
     private UUID id;
     private String fullName;
     private String specialization;
+    private String homeroomClass;
     private UUID accountId;
     private String accountPhone;
 }

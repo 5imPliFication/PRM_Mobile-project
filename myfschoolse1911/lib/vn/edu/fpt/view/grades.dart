@@ -96,10 +96,10 @@ class _GradesScreenState extends State<GradesScreen> {
 
         out.add(_SubjectGrade(
           subj,
-          avg(rows, 'oralScore'),
           avg(rows, 'fifteenMinScore'),
-          avg(rows, 'onePeriodScore'),
-          avg(rows, 'semesterScore'),
+          avg(rows, 'fortyFiveMinScore'),
+          avg(rows, 'halfSemesterScore'),
+          avg(rows, 'endSemesterScore'),
           avg(rows, 'average'),
           color,
         ));
@@ -111,10 +111,10 @@ class _GradesScreenState extends State<GradesScreen> {
       final color = _palette[i++ % _palette.length];
       return _SubjectGrade(
         g['subject'] as String? ?? '',
-        (g['oralScore'] as num?)?.toDouble() ?? 0,
         (g['fifteenMinScore'] as num?)?.toDouble() ?? 0,
-        (g['onePeriodScore'] as num?)?.toDouble() ?? 0,
-        (g['semesterScore'] as num?)?.toDouble() ?? 0,
+        (g['fortyFiveMinScore'] as num?)?.toDouble() ?? 0,
+        (g['halfSemesterScore'] as num?)?.toDouble() ?? 0,
+        (g['endSemesterScore'] as num?)?.toDouble() ?? 0,
         (g['average'] as num?)?.toDouble() ?? 0,
         color,
       );
@@ -345,10 +345,10 @@ class _GradesScreenState extends State<GradesScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildSubGradeItem('Miệng', grade.m1.toStringAsFixed(1)),
-                    _buildSubGradeItem('15 phút', grade.m2.toStringAsFixed(1)),
-                    _buildSubGradeItem('1 tiết', grade.m3.toStringAsFixed(1)),
-                    _buildSubGradeItem('Học kỳ', grade.m4.toStringAsFixed(1)),
+                    _buildSubGradeItem('15 phút', grade.fifteenMin.toStringAsFixed(1)),
+                    _buildSubGradeItem('45 phút', grade.fortyFiveMin.toStringAsFixed(1)),
+                    _buildSubGradeItem('Giữa kỳ', grade.halfSemester.toStringAsFixed(1)),
+                    _buildSubGradeItem('Cuối kỳ', grade.endSemester.toStringAsFixed(1)),
                   ],
                 ),
               ],
@@ -380,7 +380,7 @@ class _GradesScreenState extends State<GradesScreen> {
 
 class _SubjectGrade {
   final String name;
-  final double m1, m2, m3, m4, average;
+  final double fifteenMin, fortyFiveMin, halfSemester, endSemester, average;
   final Color color;
-  _SubjectGrade(this.name, this.m1, this.m2, this.m3, this.m4, this.average, this.color);
+  _SubjectGrade(this.name, this.fifteenMin, this.fortyFiveMin, this.halfSemester, this.endSemester, this.average, this.color);
 }

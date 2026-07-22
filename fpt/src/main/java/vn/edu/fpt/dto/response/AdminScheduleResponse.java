@@ -19,6 +19,6 @@ public class AdminScheduleResponse {
     private String subjectCode;
     private UUID teacherId;
     private String teacherName;
-    private UUID studentId;
-    private String studentName;
+    private UUID classId;
+    private String className;
 }

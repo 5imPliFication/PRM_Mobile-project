@@ -9,6 +9,7 @@ import vn.edu.fpt.repository.ScheduleRepository;
 import vn.edu.fpt.repository.StudentRepository;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,13 +27,18 @@ public class ScheduleService {
         Student student = studentRepository.findByAccountId(accountId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin học sinh"));
 
+        if (student.getSchoolClass() == null) {
+            return Collections.emptyList();
+        }
+
+        UUID classId = student.getSchoolClass().getId();
         List<Schedule> schedules;
         if (dayOfWeek != null) {
-            schedules = scheduleRepository.findByStudentIdAndDayOfWeekOrderByStartTime(
-                    student.getId(), dayOfWeek);
+            schedules = scheduleRepository.findBySchoolClassIdAndDayOfWeekOrderByStartTime(
+                    classId, dayOfWeek);
         } else {
-            schedules = scheduleRepository.findByStudentIdOrderByDayOfWeekAscStartTimeAsc(
-                    student.getId());
+            schedules = scheduleRepository.findBySchoolClassIdOrderByDayOfWeekAscStartTimeAsc(
+                    classId);
         }
 
         return schedules.stream()

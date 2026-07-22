@@ -46,6 +46,12 @@ export const api = {
   updateAccount: (id, data) => request(`/admin/accounts/${id}`, { method: 'PUT', body: data }),
   deleteAccount: (id) => request(`/admin/accounts/${id}`, { method: 'DELETE' }),
 
+  // Classes
+  getClasses: () => request('/admin/classes'),
+  createClass: (data) => request('/admin/classes', { method: 'POST', body: data }),
+  updateClass: (id, data) => request(`/admin/classes/${id}`, { method: 'PUT', body: data }),
+  deleteClass: (id) => request(`/admin/classes/${id}`, { method: 'DELETE' }),
+
   // Students
   getStudents: () => request('/admin/students'),
   createStudent: (data) => request('/admin/students', { method: 'POST', body: data }),
@@ -77,4 +83,9 @@ export const api = {
   createSchedule: (data) => request('/admin/schedules', { method: 'POST', body: data }),
   updateSchedule: (id, data) => request(`/admin/schedules/${id}`, { method: 'PUT', body: data }),
   deleteSchedule: (id) => request(`/admin/schedules/${id}`, { method: 'DELETE' }),
+
+  // Notifications
+  getAdminNotifications: () => request('/admin/notifications'),
+  sendNotification: (data) => request('/admin/notifications', { method: 'POST', body: data }),
+  deleteAdminNotification: (id) => request(`/admin/notifications/${id}`, { method: 'DELETE' }),
 };

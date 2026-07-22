@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../utils/api';
 import AccountManager from './AccountManager';
+import ClassManager from './ClassManager';
 import StudentManager from './StudentManager';
 import TeacherManager from './TeacherManager';
 import ParentManager from './ParentManager';
 import SubjectManager from './SubjectManager';
 import ScheduleManager from './ScheduleManager';
+import NotificationManager from './NotificationManager';
 
 export default function Dashboard({ onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -60,6 +62,8 @@ export default function Dashboard({ onLogout }) {
     switch (activeTab) {
       case 'accounts':
         return <AccountManager showToast={showToast} />;
+      case 'classes':
+        return <ClassManager showToast={showToast} />;
       case 'students':
         return <StudentManager showToast={showToast} />;
       case 'teachers':
@@ -70,6 +74,8 @@ export default function Dashboard({ onLogout }) {
         return <SubjectManager showToast={showToast} />;
       case 'schedules':
         return <ScheduleManager showToast={showToast} />;
+      case 'notifications':
+        return <NotificationManager showToast={showToast} />;
       case 'dashboard':
       default:
         return renderStatsHome();
@@ -247,8 +253,11 @@ export default function Dashboard({ onLogout }) {
           <div className="glass-card">
             <h3 style={{ fontSize: '1.2rem', marginBottom: '16px' }}>Phím tắt nhanh</h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', padding: '16px' }} onClick={() => setActiveTab('accounts')}>
-                Quản lý Tài khoản
+              <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', padding: '16px' }} onClick={() => setActiveTab('notifications')}>
+                Tạo Thông báo
+              </button>
+              <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', padding: '16px' }} onClick={() => setActiveTab('classes')}>
+                Quản lý Lớp học
               </button>
               <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', padding: '16px' }} onClick={() => setActiveTab('students')}>
                 Quản lý Học sinh
@@ -258,6 +267,9 @@ export default function Dashboard({ onLogout }) {
               </button>
               <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', padding: '16px' }} onClick={() => setActiveTab('schedules')}>
                 Quản lý Lịch học
+              </button>
+              <button className="btn btn-secondary" style={{ justifyContent: 'flex-start', padding: '16px' }} onClick={() => setActiveTab('accounts')}>
+                Quản lý Tài khoản
               </button>
             </div>
           </div>
@@ -275,10 +287,22 @@ export default function Dashboard({ onLogout }) {
         <rect x="3" y="16" width="7" height="5"></rect>
       </svg>
     )},
+    { id: 'notifications', label: 'Thông báo', icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+      </svg>
+    )},
     { id: 'accounts', label: 'Tài khoản', icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
         <circle cx="9" cy="7" r="4"></circle>
+      </svg>
+    )},
+    { id: 'classes', label: 'Lớp học', icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
       </svg>
     )},
     { id: 'students', label: 'Học sinh', icon: (

@@ -26,8 +26,9 @@ public class Student {
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
-    @Column(name = "class_name", nullable = false)
-    private String className;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "class_id")
+    private SchoolClass schoolClass;
 
     @Column(name = "academic_year")
     private String academicYear;
@@ -50,9 +51,6 @@ public class Student {
     @Column
     private String status;
 
-    @Column(name = "homeroom_teacher")
-    private String homeroomTeacher;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", referencedColumnName = "id")
     private Account account;
@@ -74,6 +72,16 @@ public class Student {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public String getClassName() {
+        return schoolClass != null ? schoolClass.getName() : null;
+    }
+
+    public String getHomeroomTeacher() {
+        return (schoolClass != null && schoolClass.getHomeroomTeacher() != null)
+                ? schoolClass.getHomeroomTeacher().getFullName()
+                : null;
+    }
 
     @PrePersist
     protected void onCreate() {

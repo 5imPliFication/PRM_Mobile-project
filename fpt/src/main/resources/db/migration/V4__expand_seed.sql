@@ -38,29 +38,26 @@ INSERT INTO accounts (id, phone, password, role, is_active, created_at) VALUES
 ('11111111-1111-1111-1111-111111111113', '0912345680', '$2a$12$ZvfhG/4WM5nIkqgG57GbDeBaZOTSpg5Uc7MybbBoo8GPvIeL1Kdgi', 'STUDENT', true, NOW()),
 ('11111111-1111-1111-1111-111111111114', '0912345681', '$2a$12$ZvfhG/4WM5nIkqgG57GbDeBaZOTSpg5Uc7MybbBoo8GPvIeL1Kdgi', 'STUDENT', true, NOW());
 
-INSERT INTO students (id, student_code, full_name, class_name, academic_year, campus, email, address, date_of_birth, program, status, homeroom_teacher, account_id, created_at) VALUES
-('22222222-2222-2222-2222-222222222223', 'FPT08922', 'Trần Thị B', '11A1', '2023 - 2026', 'FPT School Cần Thơ', 'btb.se191102@fpt.edu.vn', '45 Nguyễn Văn Cừ, Ninh Kiều, Cần Thơ', '2008-11-20', 'Phổ thông chất lượng cao', 'Đang học', 'Cô Trần Thị C', '11111111-1111-1111-1111-111111111112', NOW()),
-('22222222-2222-2222-2222-222222222224', 'FPT08923', 'Lê Văn C', '11A1', '2023 - 2026', 'FPT School Cần Thơ', 'vlc.se191103@fpt.edu.vn', '12 Trần Hưng Đạo, Ninh Kiều, Cần Thơ', '2008-03-05', 'Phổ thông chất lượng cao', 'Đang học', 'Cô Trần Thị C', '11111111-1111-1111-1111-111111111113', NOW()),
-('22222222-2222-2222-2222-222222222225', 'FPT08924', 'Phạm Thị D', '11A1', '2023 - 2026', 'FPT School Cần Thơ', 'dtp.se191104@fpt.edu.vn', '78 3/2, Ninh Kiều, Cần Thơ', '2008-06-18', 'Phổ thông chất lượng cao', 'Đang học', 'Cô Trần Thị C', '11111111-1111-1111-1111-111111111114', NOW());
+INSERT INTO students (id, student_code, full_name, class_id, academic_year, campus, email, address, date_of_birth, program, status, account_id, created_at) VALUES
+('22222222-2222-2222-2222-222222222223', 'FPT08922', 'Trần Thị B', '55555555-0000-0000-0000-0000000011a1', '2023 - 2026', 'FPT School Cần Thơ', 'btb.se191102@fpt.edu.vn', '45 Nguyễn Văn Cừ, Ninh Kiều, Cần Thơ', '2008-11-20', 'Phổ thông chất lượng cao', 'Đang học', '11111111-1111-1111-1111-111111111112', NOW()),
+('22222222-2222-2222-2222-222222222224', 'FPT08923', 'Lê Văn C', '55555555-0000-0000-0000-0000000011a1', '2023 - 2026', 'FPT School Cần Thơ', 'vlc.se191103@fpt.edu.vn', '12 Trần Hưng Đạo, Ninh Kiều, Cần Thơ', '2008-03-05', 'Phổ thông chất lượng cao', 'Đang học', '11111111-1111-1111-1111-111111111113', NOW()),
+('22222222-2222-2222-2222-222222222225', 'FPT08924', 'Phạm Thị D', '55555555-0000-0000-0000-0000000011a1', '2023 - 2026', 'FPT School Cần Thơ', 'dtp.se191104@fpt.edu.vn', '78 3/2, Ninh Kiều, Cần Thơ', '2008-06-18', 'Phổ thông chất lượng cao', 'Đang học', '11111111-1111-1111-1111-111111111114', NOW());
 
 -- Parent B also has Trần Thị B as a second child (multi-child demo)
 INSERT INTO parent_students (parent_id, student_id)
 SELECT p.id, '22222222-2222-2222-2222-222222222223' FROM parents p WHERE p.phone = '0912987654';
 
--- ===== Wednesday Toán session for the math teacher, one schedule row per student =====
+-- ===== Wednesday Toán session for class 11A1 =====
 -- Used as the attendance sheet for the class. day_of_week=4 (Wednesday), period 1.
-INSERT INTO schedules (id, day_of_week, start_time, end_time, room, status, subject_id, teacher_id, student_id) VALUES
-('66666666-6666-6666-6666-666666666610', 4, '07:30', '08:15', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444440', '33333333-3333-3333-3333-333333333330', '22222222-2222-2222-2222-222222222222'),
-('66666666-6666-6666-6666-666666666611', 4, '07:30', '08:15', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444440', '33333333-3333-3333-3333-333333333330', '22222222-2222-2222-2222-222222222223'),
-('66666666-6666-6666-6666-666666666612', 4, '07:30', '08:15', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444440', '33333333-3333-3333-3333-333333333330', '22222222-2222-2222-2222-222222222224'),
-('66666666-6666-6666-6666-666666666613', 4, '07:30', '08:15', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444440', '33333333-3333-3333-3333-333333333330', '22222222-2222-2222-2222-222222222225');
+INSERT INTO schedules (id, day_of_week, start_time, end_time, room, status, subject_id, teacher_id, class_id) VALUES
+('66666666-6666-6666-6666-666666666610', 4, '07:30', '08:15', 'Phòng A201', 'Sắp học', '44444444-4444-4444-4444-444444444440', '33333333-3333-3333-3333-333333333330', '55555555-0000-0000-0000-0000000011a1');
 
 -- Attendance for that Wednesday Toán session on the day the migration runs (demo "today")
 INSERT INTO attendances (id, schedule_id, student_id, attendance_date, status, note, marked_by, created_at) VALUES
 (uuid_generate_v4(), '66666666-6666-6666-6666-666666666610', '22222222-2222-2222-2222-222222222222', CURRENT_DATE, 'PRESENT', NULL, '33333333-3333-3333-3333-333333333330', NOW()),
-(uuid_generate_v4(), '66666666-6666-6666-6666-666666666611', '22222222-2222-2222-2222-222222222223', CURRENT_DATE, 'PRESENT', NULL, '33333333-3333-3333-3333-333333333330', NOW()),
-(uuid_generate_v4(), '66666666-6666-6666-6666-666666666612', '22222222-2222-2222-2222-222222222224', CURRENT_DATE, 'ABSENT', 'Nghỉ không phép', '33333333-3333-3333-3333-333333333330', NOW()),
-(uuid_generate_v4(), '66666666-6666-6666-6666-666666666613', '22222222-2222-2222-2222-222222222225', CURRENT_DATE, 'LATE', 'Đi trễ 10 phút', '33333333-3333-3333-3333-333333333330', NOW());
+(uuid_generate_v4(), '66666666-6666-6666-6666-666666666610', '22222222-2222-2222-2222-222222222223', CURRENT_DATE, 'PRESENT', NULL, '33333333-3333-3333-3333-333333333330', NOW()),
+(uuid_generate_v4(), '66666666-6666-6666-6666-666666666610', '22222222-2222-2222-2222-222222222224', CURRENT_DATE, 'ABSENT', 'Nghỉ không phép', '33333333-3333-3333-3333-333333333330', NOW()),
+(uuid_generate_v4(), '66666666-6666-6666-6666-666666666610', '22222222-2222-2222-2222-222222222225', CURRENT_DATE, 'LATE', 'Đi trễ 10 phút', '33333333-3333-3333-3333-333333333330', NOW());
 
 -- ===== Submissions to grade for the math teacher's assignment (Đại số - 5555...52) =====
 INSERT INTO submissions (id, file_url, grade, submitted_at, assignment_id, student_id) VALUES

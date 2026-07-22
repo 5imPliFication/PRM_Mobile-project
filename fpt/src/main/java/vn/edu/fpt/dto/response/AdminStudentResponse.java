@@ -11,6 +11,7 @@ public class AdminStudentResponse {
     private UUID id;
     private String studentCode;
     private String fullName;
+    private UUID classId;
     private String className;
     private String academicYear;
     private String campus;

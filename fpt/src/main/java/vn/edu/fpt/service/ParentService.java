@@ -22,6 +22,7 @@ import vn.edu.fpt.repository.ScheduleRepository;
 import vn.edu.fpt.repository.StudentRepository;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -114,10 +115,10 @@ public class ParentService {
                         .id(g.getId())
                         .subject(g.getSubject() != null ? g.getSubject().getName() : null)
                         .semester(g.getSemester())
-                        .oralScore(g.getOralScore())
                         .fifteenMinScore(g.getFifteenMinScore())
-                        .onePeriodScore(g.getOnePeriodScore())
-                        .semesterScore(g.getSemesterScore())
+                        .fortyFiveMinScore(g.getFortyFiveMinScore())
+                        .halfSemesterScore(g.getHalfSemesterScore())
+                        .endSemesterScore(g.getEndSemesterScore())
                         .average(g.getAverage())
                         .build())
                 .collect(Collectors.toList());
@@ -144,11 +145,15 @@ public class ParentService {
     public List<ScheduleResponse> getChildSchedule(UUID accountId, UUID studentId, Integer dayOfWeek) {
         Parent p = resolveParent(accountId);
         Student s = guardChild(p, studentId);
+        if (s.getSchoolClass() == null) {
+            return Collections.emptyList();
+        }
+        UUID classId = s.getSchoolClass().getId();
         List<Schedule> schedules;
         if (dayOfWeek != null) {
-            schedules = scheduleRepository.findByStudentIdAndDayOfWeekOrderByStartTime(s.getId(), dayOfWeek);
+            schedules = scheduleRepository.findBySchoolClassIdAndDayOfWeekOrderByStartTime(classId, dayOfWeek);
         } else {
-            schedules = scheduleRepository.findByStudentIdOrderByDayOfWeekAscStartTimeAsc(s.getId());
+            schedules = scheduleRepository.findBySchoolClassIdOrderByDayOfWeekAscStartTimeAsc(classId);
         }
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("HH:mm");
         return schedules.stream()
@@ -173,8 +178,8 @@ public class ParentService {
     public List<NotificationResponse> getChildNotifications(UUID accountId, UUID studentId) {
         Parent p = resolveParent(accountId);
         Student s = guardChild(p, studentId);
-        return notificationRepository.findByStudentIdOrderByCreatedAtDesc(s.getId())
-                .stream()
+        List<Notification> list = notificationRepository.findByAccountIdOrStudentIdOrderByCreatedAtDesc(accountId, s.getId());
+        return list.stream()
                 .map(n -> NotificationResponse.builder()
                         .id(n.getId())
                         .title(n.getTitle())

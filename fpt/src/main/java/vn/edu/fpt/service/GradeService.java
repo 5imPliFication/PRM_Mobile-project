@@ -40,10 +40,10 @@ public class GradeService {
                 .id(grade.getId())
                 .subject(grade.getSubject().getName())
                 .semester(grade.getSemester())
-                .oralScore(grade.getOralScore())
                 .fifteenMinScore(grade.getFifteenMinScore())
-                .onePeriodScore(grade.getOnePeriodScore())
-                .semesterScore(grade.getSemesterScore())
+                .fortyFiveMinScore(grade.getFortyFiveMinScore())
+                .halfSemesterScore(grade.getHalfSemesterScore())
+                .endSemesterScore(grade.getEndSemesterScore())
                 .average(grade.getAverage())
                 .build();
     }

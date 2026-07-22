@@ -3,6 +3,7 @@ import { api } from '../utils/api';
 
 export default function StudentManager({ showToast }) {
   const [students, setStudents] = useState([]);
+  const [classList, setClassList] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -14,7 +15,7 @@ export default function StudentManager({ showToast }) {
   const [formData, setFormData] = useState({
     studentCode: '',
     fullName: '',
-    className: '',
+    classId: '',
     academicYear: '2023 - 2026',
     campus: 'FPT School Cần Thơ',
     email: '',
@@ -22,7 +23,6 @@ export default function StudentManager({ showToast }) {
     dateOfBirth: '',
     program: 'Phổ thông chất lượng cao',
     status: 'Đang học',
-    homeroomTeacher: '',
     accountId: ''
   });
 
@@ -30,6 +30,7 @@ export default function StudentManager({ showToast }) {
 
   useEffect(() => {
     fetchStudents();
+    fetchClasses();
     fetchAccounts();
   }, []);
 
@@ -45,10 +46,18 @@ export default function StudentManager({ showToast }) {
     }
   };
 
+  const fetchClasses = async () => {
+    try {
+      const data = await api.getClasses();
+      setClassList(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchAccounts = async () => {
     try {
       const data = await api.getAccounts();
-      // Only accounts with role STUDENT that are either not linked or linked to this student
       setAccounts(data.filter(acc => acc.role === 'STUDENT'));
     } catch (err) {
       console.error(err);
@@ -61,7 +70,7 @@ export default function StudentManager({ showToast }) {
     setFormData({
       studentCode: '',
       fullName: '',
-      className: '',
+      classId: classList[0]?.id || '',
       academicYear: '2023 - 2026',
       campus: 'FPT School Cần Thơ',
       email: '',
@@ -69,9 +78,9 @@ export default function StudentManager({ showToast }) {
       dateOfBirth: '',
       program: 'Phổ thông chất lượng cao',
       status: 'Đang học',
-      homeroomTeacher: '',
       accountId: ''
     });
+    fetchClasses();
     fetchAccounts();
     dialogRef.current?.showModal();
   };
@@ -82,7 +91,7 @@ export default function StudentManager({ showToast }) {
     setFormData({
       studentCode: student.studentCode,
       fullName: student.fullName,
-      className: student.className,
+      classId: student.classId || '',
       academicYear: student.academicYear || '2023 - 2026',
       campus: student.campus || 'FPT School Cần Thơ',
       email: student.email || '',
@@ -90,9 +99,9 @@ export default function StudentManager({ showToast }) {
       dateOfBirth: student.dateOfBirth || '',
       program: student.program || 'Phổ thông chất lượng cao',
       status: student.status || 'Đang học',
-      homeroomTeacher: student.homeroomTeacher || '',
       accountId: student.accountId || ''
     });
+    fetchClasses();
     fetchAccounts();
     dialogRef.current?.showModal();
   };
@@ -105,6 +114,7 @@ export default function StudentManager({ showToast }) {
     e.preventDefault();
     const dataToSend = {
       ...formData,
+      classId: formData.classId === '' ? null : formData.classId,
       accountId: formData.accountId === '' ? null : formData.accountId
     };
 
@@ -124,7 +134,7 @@ export default function StudentManager({ showToast }) {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa học sinh này? Tất cả bảng điểm, điểm danh, lịch học của học sinh này sẽ bị xóa.')) {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa học sinh này? Tất cả bảng điểm, điểm danh của học sinh này sẽ bị xóa.')) {
       return;
     }
     try {
@@ -137,13 +147,13 @@ export default function StudentManager({ showToast }) {
   };
 
   // Get unique class names for filters
-  const classesList = ['ALL', ...new Set(students.map(s => s.className).filter(Boolean))];
+  const uniqueClassNames = ['ALL', ...new Set(students.map(s => s.className).filter(Boolean))];
 
   const filteredStudents = students.filter(student => {
     const term = searchTerm.toLowerCase();
-    const matchesSearch = student.fullName.toLowerCase().includes(term) ||
-                          student.studentCode.toLowerCase().includes(term) ||
-                          student.className.toLowerCase().includes(term);
+    const matchesSearch = student.fullName?.toLowerCase().includes(term) ||
+                          student.studentCode?.toLowerCase().includes(term) ||
+                          (student.className && student.className.toLowerCase().includes(term));
     const matchesFilter = filterClass === 'ALL' || student.className === filterClass;
     return matchesSearch && matchesFilter;
   });
@@ -189,7 +199,7 @@ export default function StudentManager({ showToast }) {
         <div style={{ width: '180px' }}>
           <select className="form-control form-select" value={filterClass} onChange={(e) => setFilterClass(e.target.value)}>
             <option value="ALL">Tất cả các lớp</option>
-            {classesList.filter(c => c !== 'ALL').map(c => (
+            {uniqueClassNames.filter(c => c !== 'ALL').map(c => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
@@ -198,134 +208,79 @@ export default function StudentManager({ showToast }) {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu học sinh...</div>
+      ) : filteredStudents.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>Không có học sinh nào phù hợp</div>
       ) : (
         <>
-          <div className="table-container">
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Mã học sinh</th>
-                  <th>Họ tên</th>
+                  <th>Mã HS</th>
+                  <th>Họ và tên</th>
                   <th>Lớp</th>
-                  <th>Điện thoại liên kết</th>
-                  <th>Giáo viên chủ nhiệm</th>
+                  <th>GV Chủ nhiệm</th>
+                  <th>Tài khoản</th>
                   <th>Trạng thái</th>
-                  <th style={{ textAlign: 'right' }}>Hành động</th>
+                  <th style={{ textAlign: 'right' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '24px' }}>
-                      Không tìm thấy học sinh nào phù hợp
+                {paginatedStudents.map(student => (
+                  <tr key={student.id}>
+                    <td><span className="badge badge-student">{student.studentCode}</span></td>
+                    <td style={{ fontWeight: '600' }}>{student.fullName}</td>
+                    <td>{student.className || <span style={{ color: 'var(--text-muted)' }}>Chưa xếp lớp</span>}</td>
+                    <td>{student.homeroomTeacher || <span style={{ color: 'var(--text-muted)' }}>--</span>}</td>
+                    <td>
+                      {student.accountPhone ? (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--color-accent)' }}>{student.accountPhone}</span>
+                      ) : (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Chưa liên kết</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`badge ${student.status === 'Đang học' ? 'badge-active' : 'badge-inactive'}`}>
+                        {student.status || 'Đang học'}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleOpenEditModal(student)}>Sửa</button>
+                        <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem', color: '#fca5a5', borderColor: 'rgba(239, 68, 68, 0.2)' }} onClick={() => handleDelete(student.id)}>Xóa</button>
+                      </div>
                     </td>
                   </tr>
-                ) : (
-                  paginatedStudents.map(student => (
-                    <tr key={student.id}>
-                      <td style={{ fontWeight: '600', color: 'var(--color-accent)' }}>{student.studentCode}</td>
-                      <td style={{ fontWeight: '500' }}>{student.fullName}</td>
-                      <td>{student.className}</td>
-                      <td style={{ fontSize: '0.9rem' }}>
-                        {student.accountPhone ? (
-                          <span style={{ fontWeight: '500' }}>{student.accountPhone}</span>
-                        ) : (
-                          <span style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>Chưa liên kết</span>
-                        )}
-                      </td>
-                      <td style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{student.homeroomTeacher || 'Chưa phân công'}</td>
-                      <td>
-                        <span className={`badge ${student.status === 'Đang học' ? 'badge-student' : 'badge-inactive'}`}>
-                          {student.status}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                          <button className="btn btn-secondary btn-sm" onClick={() => handleOpenEditModal(student)}>
-                            Sửa
-                          </button>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(student.id)}>
-                            Xóa
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
 
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginTop: '20px',
-              padding: '12px 20px',
-              background: 'rgba(18, 19, 26, 0.4)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-sm)',
-              flexWrap: 'wrap',
-              gap: '12px'
-            }}>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                Hiển thị {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredStudents.length)} trong tổng số {filteredStudents.length} mục
-              </div>
-              <div style={{ display: 'flex', gap: '6px' }}>
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  style={{ padding: '6px 12px', minWidth: '40px' }}
-                >
-                  Trước
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'} btn-sm`}
-                    onClick={() => setCurrentPage(page)}
-                    style={{
-                      padding: '6px 12px',
-                      minWidth: '36px',
-                      background: currentPage === page ? 'var(--color-accent-gradient)' : 'rgba(255, 255, 255, 0.04)',
-                      borderColor: currentPage === page ? 'var(--color-accent)' : 'var(--border-color)'
-                    }}
-                  >
-                    {page}
-                  </button>
-                ))}
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  style={{ padding: '6px 12px', minWidth: '40px' }}
-                >
-                  Sau
-                </button>
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '20px' }}>
+              <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>Trước</button>
+              <span style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: '0.9rem' }}>Trang {currentPage} / {totalPages}</span>
+              <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>Sau</button>
             </div>
           )}
         </>
       )}
 
-      {/* Add/Edit Modal */}
-      <dialog ref={dialogRef}>
-        <div className="modal-content" style={{ maxWidth: '650px' }}>
-          <div className="modal-header">
-            <h3 className="modal-title">{isEditMode ? 'Cập nhật thông tin học sinh' : 'Tạo mới hồ sơ học sinh'}</h3>
-            <button className="modal-close" onClick={handleCloseModal}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
+      {/* Modal Dialog for Add/Edit Student */}
+      <dialog ref={dialogRef} className="modal">
+        <div style={{ width: '100%', maxWidth: '600px' }} className="modal-content">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '700' }}>
+              {isEditMode ? 'Cập nhật thông tin học sinh' : 'Thêm học sinh mới'}
+            </h3>
+            <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
           </div>
+
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               <div className="form-group">
-                <label className="form-label">Mã số học sinh *</label>
+                <label className="form-label">Mã học sinh *</label>
                 <input
                   type="text"
                   className="form-control"
@@ -344,20 +299,25 @@ export default function StudentManager({ showToast }) {
                   required
                   value={formData.fullName}
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="Nhập họ và tên học sinh"
+                  placeholder="Ví dụ: Nguyễn Văn A"
                 />
               </div>
 
               <div className="form-group">
-                <label className="form-label">Lớp *</label>
-                <input
-                  type="text"
-                  className="form-control"
+                <label className="form-label">Lớp học *</label>
+                <select
+                  className="form-control form-select"
                   required
-                  value={formData.className}
-                  onChange={(e) => setFormData({ ...formData, className: e.target.value })}
-                  placeholder="Ví dụ: 11A1"
-                />
+                  value={formData.classId}
+                  onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+                >
+                  <option value="">-- Chọn lớp học --</option>
+                  {classList.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} {c.homeroomTeacherName ? `(GVCN: ${c.homeroomTeacherName})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="form-group">
@@ -367,7 +327,7 @@ export default function StudentManager({ showToast }) {
                   className="form-control"
                   value={formData.academicYear}
                   onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
-                  placeholder="Ví dụ: 2023 - 2026"
+                  placeholder="2023 - 2026"
                 />
               </div>
 
@@ -399,7 +359,7 @@ export default function StudentManager({ showToast }) {
                   className="form-control"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Nhập địa chỉ tạm trú/thường trú"
+                  placeholder="Nhập địa chỉ"
                 />
               </div>
 
@@ -424,17 +384,20 @@ export default function StudentManager({ showToast }) {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Giáo viên chủ nhiệm</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={formData.homeroomTeacher}
-                  onChange={(e) => setFormData({ ...formData, homeroomTeacher: e.target.value })}
-                  placeholder="Nhập tên giáo viên chủ nhiệm"
-                />
+                <label className="form-label">Trạng thái học tập</label>
+                <select
+                  className="form-control form-select"
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                >
+                  <option value="Đang học">Đang học</option>
+                  <option value="Bảo lưu">Bảo lưu</option>
+                  <option value="Đã tốt nghiệp">Đã tốt nghiệp</option>
+                  <option value="Đã thôi học">Đã thôi học</option>
+                </select>
               </div>
 
-              <div className="form-group">
+              <div className="form-group" style={{ gridColumn: 'span 2' }}>
                 <label className="form-label">Tài khoản liên kết (Học sinh)</label>
                 <select
                   className="form-control form-select"
@@ -449,23 +412,9 @@ export default function StudentManager({ showToast }) {
                   ))}
                 </select>
               </div>
-
-              <div className="form-group">
-                <label className="form-label">Trạng thái học tập</label>
-                <select
-                  className="form-control form-select"
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <option value="Đang học">Đang học</option>
-                  <option value="Bảo lưu">Bảo lưu</option>
-                  <option value="Đã tốt nghiệp">Đã tốt nghiệp</option>
-                  <option value="Đã thôi học">Đã thôi học</option>
-                </select>
-              </div>
             </div>
 
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ marginTop: '20px' }}>
               <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>Hủy</button>
               <button type="submit" className="btn btn-primary">{isEditMode ? 'Cập nhật' : 'Tạo mới'}</button>
             </div>

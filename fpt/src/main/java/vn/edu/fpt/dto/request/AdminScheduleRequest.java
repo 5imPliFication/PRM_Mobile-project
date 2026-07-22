@@ -20,6 +20,6 @@ public class AdminScheduleRequest {
     private UUID subjectId;
     @NotNull(message = "Giáo viên không được để trống")
     private UUID teacherId;
-    @NotNull(message = "Học sinh không được để trống")
-    private UUID studentId;
+    @NotNull(message = "Lớp học không được để trống")
+    private UUID classId;
 }
